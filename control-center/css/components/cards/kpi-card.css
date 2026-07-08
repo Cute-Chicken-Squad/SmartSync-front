@@ -58,3 +58,28 @@
     color: #ff6b6b;
     font-weight: 600;
 }
+
+/* 手环卡片特殊样式 */
+.kpi-card.bracelet-card {
+    background: linear-gradient(135deg, #f0f7ff 0%, #e7f5ff 100%);
+    border-color: #d0e8ff;
+}
+
+.kpi-card.bracelet-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(92, 124, 250, 0.2);
+    border-color: #5c7cfa;
+}
+
+.kpi-card.bracelet-card .kpi-title {
+    color: #5c7cfa;
+}
+
+.kpi-card.bracelet-card .kpi-value {
+    color: #5c7cfa;
+}
+
+.kpi-card.bracelet-card .kpi-change {
+    color: #51cf66;
+    font-weight: 500;
+}

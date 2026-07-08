@@ -25,6 +25,12 @@
                     <a href="dispatch.html" class="nav-link active">调度管理</a>
                 </li>
                 <li class="nav-item">
+                    <a href="bracelet.html" class="nav-link">手环管理</a>
+                </li>
+                <li class="nav-item">
+                    <a href="task-monitor.html" class="nav-link">任务监控</a>
+                </li>
+                <li class="nav-item">
                     <a href="emergency.html" class="nav-link">紧急情况</a>
                 </li>
                 <li class="nav-item">
@@ -46,8 +52,10 @@
                 </div>
                 <div class="header-right">
                     <span class="date-info" id="dateInfo">2026-04-29 14:35:28</span>
-                    <button class="btn primary" id="mainTriageBtn" onclick="var btn=this;btn.innerHTML='执行中...';btn.disabled=true;setTimeout(function(){btn.innerHTML='执行分流';btn.disabled=false;alert('分流执行成功！');},1500);">执行分流</button>
-                    <button class="btn success" id="exportBtn" onclick="var btn=this;btn.innerHTML='导出中...';btn.disabled=true;setTimeout(function(){btn.innerHTML='导出报表';btn.disabled=false;alert('报表导出成功！');},1500);">导出报表</button>
+                    <button class="btn primary" id="mainTriageBtn"
+                        onclick="var btn=this;btn.innerHTML='执行中...';btn.disabled=true;setTimeout(function(){btn.innerHTML='执行分流';btn.disabled=false;alert('分流执行成功！');},1500);">执行分流</button>
+                    <button class="btn success" id="exportBtn"
+                        onclick="var btn=this;btn.innerHTML='导出中...';btn.disabled=true;setTimeout(function(){btn.innerHTML='导出报表';btn.disabled=false;alert('报表导出成功！');},1500);">导出报表</button>
                 </div>
             </header>
 
@@ -208,7 +216,8 @@
             <div class="card">
                 <div class="card-header">
                     <h4 class="card-title">柔性动态分流决策</h4>
-                    <button class="btn primary" onclick="var btn=this;btn.innerHTML='执行中...';btn.disabled=true;setTimeout(function(){btn.innerHTML='执行分流';btn.disabled=false;alert('分流执行成功！');},1500);">执行分流</button>
+                    <button class="btn primary"
+                        onclick="var btn=this;btn.innerHTML='执行中...';btn.disabled=true;setTimeout(function(){btn.innerHTML='执行分流';btn.disabled=false;alert('分流执行成功！');},1500);">执行分流</button>
                 </div>
                 <div class="dispatch-grid">
                     <div class="dispatch-metrics">
@@ -229,12 +238,14 @@
                         <h5>智能分流建议</h5>
                         <div class="suggestion-item">
                             <span class="suggestion-icon">→</span>
-                            <span class="suggestion-text">李女士 (#1056) 从 <strong>检验科</strong> 分流至 <strong>影像科</strong></span>
+                            <span class="suggestion-text">李女士 (#1056) 从 <strong>检验科</strong> 分流至
+                                <strong>影像科</strong></span>
                             <span class="suggestion-benefit">预计减少等待 15分钟</span>
                         </div>
                         <div class="suggestion-item">
                             <span class="suggestion-icon">→</span>
-                            <span class="suggestion-text">张先生 (#1034) 从 <strong>内科</strong> 改约至 <strong>内分泌科</strong></span>
+                            <span class="suggestion-text">张先生 (#1034) 从 <strong>内科</strong> 改约至
+                                <strong>内分泌科</strong></span>
                             <span class="suggestion-benefit">预计减少等待 8分钟</span>
                         </div>
                         <div class="suggestion-item">
