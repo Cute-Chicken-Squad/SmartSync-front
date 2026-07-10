@@ -39,6 +39,10 @@ function restartServer(name) {
     }
 }
 
+function editServer(name) {
+    alert(`编辑 ${name} 功能已触发`);
+}
+
 function deleteServer(name) {
     if (confirm(`确定要删除 ${name} 吗？此操作不可恢复！`)) {
         const btn = event.target;
@@ -88,7 +92,12 @@ window.addEventListener('load', function() {
                 const name = this.parentElement.parentElement.querySelector('td:first-child').textContent;
                 restartServer(name);
             });
-        } else if (btn.style.background === 'rgb(244, 67, 54)' || btn.textContent === '删除') {
+        } else if (btn.textContent === '编辑') {
+            btn.addEventListener('click', function() {
+                const name = this.parentElement.parentElement.querySelector('td:first-child').textContent;
+                editServer(name);
+            });
+        } else if (btn.classList.contains('danger') || btn.textContent === '删除') {
             btn.addEventListener('click', function() {
                 const name = this.parentElement.parentElement.querySelector('td:first-child').textContent;
                 deleteServer(name);

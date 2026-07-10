@@ -126,7 +126,7 @@
                 </div>
             </div>
 
-            <!-- 子站管理 -->
+            <!-- 子站终端管理 -->
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">子站终端管理</h3>
@@ -137,7 +137,9 @@
                     <table class="data-table">
                         <thead>
                             <tr>
-                                <th>子站名称</th>
+                                <th>节点名称</th>
+                                <th>节点类型</th>
+                                <th>功能</th>
                                 <th>位置</th>
                                 <th>状态</th>
                                 <th>最后在线</th>
@@ -146,51 +148,118 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td>子站#01</td>
-                                <td>门诊楼A-1F</td>
+                                <td>智能子站-S01</td>
+                                <td><span class="type-badge smart">智能子站</span></td>
+                                <td>NFC读卡器、地图展示、语音交互、任务确认</td>
+                                <td>门诊大厅</td>
                                 <td><span class="status-badge normal">在线</span></td>
                                 <td>刚刚</td>
                                 <td>
-                                    <button class="btn-sm" onclick="restartServer('子站#01')">重启</button>
-                                    <button class="btn-sm" style="background: #f44336;"
-                                        onclick="deleteServer('子站#01')">删除</button>
+                                    <button class="btn-sm" onclick="restartServer('智能子站-S01')">重启</button>
+                                    <button class="btn-sm" onclick="editServer('智能子站-S01')">编辑</button>
+                                    <button class="btn-sm danger" onclick="deleteServer('智能子站-S01')">删除</button>
                                 </td>
                             </tr>
                             <tr>
-                                <td>子站#02</td>
-                                <td>门诊楼A-2F</td>
+                                <td>智能子站-S02</td>
+                                <td><span class="type-badge smart">智能子站</span></td>
+                                <td>NFC读卡器、地图展示、语音交互、任务确认</td>
+                                <td>科室交汇区A</td>
                                 <td><span class="status-badge normal">在线</span></td>
                                 <td>刚刚</td>
                                 <td>
-                                    <button class="btn-sm" onclick="restartServer('子站#02')">重启</button>
-                                    <button class="btn-sm" style="background: #f44336;"
-                                        onclick="deleteServer('子站#02')">删除</button>
+                                    <button class="btn-sm" onclick="restartServer('智能子站-S02')">重启</button>
+                                    <button class="btn-sm" onclick="editServer('智能子站-S02')">编辑</button>
+                                    <button class="btn-sm danger" onclick="deleteServer('智能子站-S02')">删除</button>
                                 </td>
                             </tr>
                             <tr>
-                                <td>子站#03</td>
-                                <td>门诊楼B-1F</td>
-                                <td><span class="status-badge danger">离线</span></td>
-                                <td>10分钟前</td>
-                                <td>
-                                    <button class="btn-sm" onclick="restartServer('子站#03')">重启</button>
-                                    <button class="btn-sm" style="background: #f44336;"
-                                        onclick="deleteServer('子站#03')">删除</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>子站#04</td>
-                                <td>医技楼-1F</td>
+                                <td>智能子站-S03</td>
+                                <td><span class="type-badge smart">智能子站</span></td>
+                                <td>NFC读卡器、地图展示、语音交互、任务确认</td>
+                                <td>科室交汇区B</td>
                                 <td><span class="status-badge normal">在线</span></td>
                                 <td>刚刚</td>
                                 <td>
-                                    <button class="btn-sm" onclick="restartServer('子站#04')">重启</button>
-                                    <button class="btn-sm" style="background: #f44336;"
-                                        onclick="deleteServer('子站#04')">删除</button>
+                                    <button class="btn-sm" onclick="restartServer('智能子站-S03')">重启</button>
+                                    <button class="btn-sm" onclick="editServer('智能子站-S03')">编辑</button>
+                                    <button class="btn-sm danger" onclick="deleteServer('智能子站-S03')">删除</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>轻量导向-L01</td>
+                                <td><span class="type-badge light">轻量导向节点</span></td>
+                                <td>NFC识别、路径引导</td>
+                                <td>1F走廊</td>
+                                <td><span class="status-badge normal">在线</span></td>
+                                <td>刚刚</td>
+                                <td>
+                                    <button class="btn-sm" onclick="restartServer('轻量导向-L01')">重启</button>
+                                    <button class="btn-sm" onclick="editServer('轻量导向-L01')">编辑</button>
+                                    <button class="btn-sm danger" onclick="deleteServer('轻量导向-L01')">删除</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>轻量导向-L02</td>
+                                <td><span class="type-badge light">轻量导向节点</span></td>
+                                <td>NFC识别、路径引导</td>
+                                <td>2F走廊</td>
+                                <td><span class="status-badge normal">在线</span></td>
+                                <td>刚刚</td>
+                                <td>
+                                    <button class="btn-sm" onclick="restartServer('轻量导向-L02')">重启</button>
+                                    <button class="btn-sm" onclick="editServer('轻量导向-L02')">编辑</button>
+                                    <button class="btn-sm danger" onclick="deleteServer('轻量导向-L02')">删除</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>轻量导向-L03</td>
+                                <td><span class="type-badge light">轻量导向节点</span></td>
+                                <td>NFC识别、路径引导</td>
+                                <td>3F走廊</td>
+                                <td><span class="status-badge warning">离线</span></td>
+                                <td>5分钟前</td>
+                                <td>
+                                    <button class="btn-sm" onclick="restartServer('轻量导向-L03')">重启</button>
+                                    <button class="btn-sm" onclick="editServer('轻量导向-L03')">编辑</button>
+                                    <button class="btn-sm danger" onclick="deleteServer('轻量导向-L03')">删除</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>RFID感知-R01</td>
+                                <td><span class="type-badge rfid">RFID感知节点</span></td>
+                                <td>患者感知、状态监测</td>
+                                <td>ICU区域</td>
+                                <td><span class="status-badge normal">在线</span></td>
+                                <td>刚刚</td>
+                                <td>
+                                    <button class="btn-sm" onclick="restartServer('RFID感知-R01')">重启</button>
+                                    <button class="btn-sm" onclick="editServer('RFID感知-R01')">编辑</button>
+                                    <button class="btn-sm danger" onclick="deleteServer('RFID感知-R01')">删除</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>RFID感知-R02</td>
+                                <td><span class="type-badge rfid">RFID感知节点</span></td>
+                                <td>患者感知、状态监测</td>
+                                <td>特殊病房区</td>
+                                <td><span class="status-badge normal">在线</span></td>
+                                <td>刚刚</td>
+                                <td>
+                                    <button class="btn-sm" onclick="restartServer('RFID感知-R02')">重启</button>
+                                    <button class="btn-sm" onclick="editServer('RFID感知-R02')">编辑</button>
+                                    <button class="btn-sm danger" onclick="deleteServer('RFID感知-R02')">删除</button>
                                 </td>
                             </tr>
                         </tbody>
                     </table>
+                </div>
+                <div class="card-footer">
+                    <div class="summary-stats">
+                        <span>总计：8台节点</span>
+                        <span>在线：7台</span>
+                        <span>离线：1台</span>
+                    </div>
                 </div>
             </div>
 

@@ -25,3 +25,24 @@
 .data-table tr:hover {
     background: #f8f9fa;
 }
+
+.card-footer {
+    padding: 16px;
+    border-top: 1px solid #f1f3f5;
+    background: #fafbfc;
+    border-radius: 0 0 12px 12px;
+}
+
+.summary-stats {
+    display: flex;
+    gap: 24px;
+    font-size: 13px;
+    color: #6c757d;
+}
+
+.summary-stats span {
+    padding: 4px 12px;
+    background: #ffffff;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+}
