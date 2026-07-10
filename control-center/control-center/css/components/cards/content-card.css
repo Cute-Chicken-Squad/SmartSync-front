@@ -35,3 +35,12 @@
     border-color: #ffffff;
 }
 
+.clickable-card {
+    cursor: pointer;
+}
+
+.clickable-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(92, 124, 250, 0.12);
+    border-color: rgba(92, 124, 250, 0.2);
+}

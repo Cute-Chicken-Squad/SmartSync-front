@@ -18,9 +18,9 @@ function updateAlarmStatus() {
     const alarmCard = document.getElementById('alarmCard');
     const alarmValue = document.getElementById('alarmValue');
     const alarmStatus = document.getElementById('alarmStatus');
-    
+
     const count = parseInt(alarmValue.textContent);
-    
+
     if (count === 0) {
         alarmCard.classList.remove('alarm');
         alarmStatus.textContent = '正常';
@@ -33,6 +33,7 @@ function updateAlarmStatus() {
 }
 
 function handleAlarm(id, event) {
+    event.stopPropagation();
     const btn = event.target;
     btn.innerHTML = '处理中...';
     btn.disabled = true;
@@ -43,7 +44,7 @@ function handleAlarm(id, event) {
     }, 800);
 }
 
-window.addEventListener('load', function() {
+window.addEventListener('load', function () {
     updateAlarmStatus();
     const alarmBtns = document.querySelectorAll('.alarm-btn');
     alarmBtns.forEach((btn, index) => {
