@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#2C3E50">
+    <title>智环引诊 - 患者服务</title>
+    <style>
+        :root {
+            --primary-color: #2C3E50;
+            --accent-color: #3498DB;
+            --success-color: #27AE60;
+            --warning-color: #F39C12;
+            --danger-color: #E74C3C;
+            --bg-primary: #FFFFFF;
+            --bg-secondary: #F8F9FA;
+            --text-primary: #1A1A1A;
+            --text-secondary: #5A5A5A;
+            --text-muted: #9A9A9A;
+            --border-color: #E0E0E0;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --font-size-xs: 12px;
+            --font-size-sm: 13px;
+            --font-size-base: 14px;
+            --font-size-md: 15px;
+            --font-size-lg: 17px;
+            --font-size-xl: 20px;
+            --font-size-xxl: 26px;
+        }
+
+        body.elder-mode {
+            --font-size-xs: 14px;
+            --font-size-sm: 16px;
+            --font-size-base: 18px;
+            --font-size-md: 20px;
+            --font-size-lg: 22px;
+            --font-size-xl: 26px;
+            --font-size-xxl: 32px;
+            --accent-color: #2980B9;
+            --text-primary: #000000;
+            --text-secondary: #333333;
+            --text-muted: #666666;
+            --border-color: #CCCCCC;
+            --bg-secondary: #F0F0F0;
+            --btn-min-height: 56px;
+            --btn-gap: 16px;
+            --border-width: 2px;
+        }
+
+        body.high-contrast {
+            --bg-primary: #0D0D0D;
+            --bg-secondary: #1A1A1A;
+            --text-primary: #FFFFFF;
+            --text-secondary: #E5E5E5;
+            --text-muted: #B0B0B0;
+            --border-color: #404040;
+            --accent-color: #5BA3E8;
+            --success-color: #67C23A;
+            --warning-color: #FAB005;
+            --danger-color: #FF5252;
+            --btn-min-height: 56px;
+        }
+
+        body.font-large {
+            --font-size-xs: 16px;
+            --font-size-sm: 18px;
+            --font-size-base: 20px;
+            --font-size-md: 22px;
+            --font-size-lg: 24px;
+            --font-size-xl: 28px;
+            --font-size-xxl: 34px;
+            --btn-min-height: 60px;
+        }
+
+        body.font-xlarge {
+            --font-size-xs: 18px;
+            --font-size-sm: 20px;
+            --font-size-base: 22px;
+            --font-size-md: 24px;
+            --font-size-lg: 28px;
+            --font-size-xl: 32px;
+            --font-size-xxl: 40px;
+            --btn-min-height: 68px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: var(--bg-secondary);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .app-wrapper {
+            max-width: 420px;
+            margin: 0 auto;
+            background: var(--bg-primary);
+            min-height: 100vh;
+            position: relative;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            padding: 16px 20px;
+            background: var(--bg-primary);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .back-btn {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-secondary);
+            border-radius: 50%;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            margin-right: 12px;
+            color: var(--text-secondary);
+        }
+
+        .header-title {
+            font-size: var(--font-size-lg);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .card {
+            background: var(--bg-primary);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color);
+        }
+
+        .card-gradient {
+            background: linear-gradient(135deg, rgba(52, 152, 219, 0.08), rgba(52, 152, 219, 0.02));
+            border-color: rgba(52, 152, 219, 0.2);
+        }
+
+        .btn {
+            padding: 16px 24px;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: var(--font-size-md);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-height: var(--btn-min-height, 52px);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-color), #2980B9);
+            color: #FFFFFF;
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--accent-color);
+            border: 2px solid var(--accent-color);
+        }
+
+        .btn-outline:hover {
+            background: var(--accent-color);
+            color: #FFFFFF;
+        }
+
+        .btn-block {
+            width: 100%;
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 420px;
+            display: flex;
+            background: var(--bg-primary);
+            border-top: 1px solid var(--border-color);
+            padding: 8px 0;
+            z-index: 1000;
+        }
+
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            padding: 8px 0;
+            border: none;
+            background: none;
+            cursor: pointer;
+        }
+
+        .nav-item .nav-text {
+            font-size: var(--font-size-xs);
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .nav-item.active .nav-text {
+            color: var(--accent-color);
+            font-weight: 600;
+        }
+
+        .nav-item::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: var(--text-muted);
+            border-radius: 50%;
+        }
+
+        .nav-item.active::before {
+            background: var(--accent-color);
+            transform: scale(1.3);
+        }
+
+        .home-container {
+            min-height: 100vh;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-primary);
+        }
+
+        .home-actions {
+            width: 100%;
+            max-width: 280px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 40px;
+        }
+
+        .patient-card {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .patient-avatar {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, var(--accent-color), #2980B9);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: 700;
+            color: #FFFFFF;
+        }
+
+        .patient-info {
+            flex: 1;
+        }
+
+        .patient-name {
+            font-size: var(--font-size-lg);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .patient-detail {
+            font-size: var(--font-size-sm);
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+        }
+
+        .info-row:not(:last-child) {
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .info-label {
+            font-size: var(--font-size-sm);
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .info-value {
+            font-size: var(--font-size-sm);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .highlight {
+            color: var(--accent-color);
+        }
+
+        .progress-section {
+            margin-top: 20px;
+        }
+
+        .progress-title {
+            font-size: var(--font-size-md);
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+        }
+
+        .progress-timeline {
+            padding-left: 16px;
+            position: relative;
+        }
+
+        .progress-timeline::before {
+            content: '';
+            position: absolute;
+            left: 5px;
+            top: 8px;
+            bottom: 8px;
+            width: 2px;
+            background: var(--border-color);
+        }
+
+        .progress-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .progress-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--border-color);
+            flex-shrink: 0;
+            margin-top: 4px;
+        }
+
+        .progress-item.completed .progress-dot {
+            background: var(--success-color);
+        }
+
+        .progress-item.active .progress-dot {
+            background: var(--accent-color);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.4);
+            }
+
+            50% {
+                box-shadow: 0 0 0 6px rgba(52, 152, 219, 0);
+            }
+        }
+
+        .progress-step {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .progress-time {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .task-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--accent-color), #2980B9);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+            color: #FFFFFF;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 0;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            background: none;
+            border-left: none;
+            border-right: none;
+            border-top: none;
+            width: 100%;
+            text-align: left;
+        }
+
+        .menu-item:last-child {
+            border-bottom: none;
+        }
+
+        .menu-text {
+            font-size: var(--font-size-md);
+            color: var(--text-primary);
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: rgba(0, 0, 0, 0.85);
+            color: #FFFFFF;
+            padding: 12px 24px;
+            border-radius: var(--radius-md);
+            font-size: var(--font-size-sm);
+            z-index: 9999;
+            opacity: 0;
+            transition: all 0.3s ease;
+            max-width: 320px;
+            text-align: center;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            background: rgba(39, 174, 96, 0.9);
+        }
+
+        .toast.error {
+            background: rgba(255, 77, 79, 0.9);
+        }
+
+        .elder-toggle {
+            position: relative;
+            width: 56px;
+            height: 32px;
+            cursor: pointer;
+        }
+
+        .elder-toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-track {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #CCCCCC;
+            border-radius: 32px;
+            transition: background 0.3s ease;
+        }
+
+        .elder-toggle input:checked+.toggle-track {
+            background: var(--accent-color);
+        }
+
+        .toggle-thumb {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 26px;
+            height: 26px;
+            background: #FFFFFF;
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            transition: transform 0.3s ease;
+        }
+
+        .elder-toggle input:checked~.toggle-thumb {
+            transform: translateX(27px);
+        }
+
+        body.high-contrast .card {
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        body.high-contrast .card-gradient {
+            background: linear-gradient(135deg, rgba(91, 163, 232, 0.15), rgba(91, 163, 232, 0.05));
+            border-color: rgba(91, 163, 232, 0.3);
+        }
+
+        body.high-contrast .btn-primary {
+            background: linear-gradient(135deg, var(--accent-color), #3D7BC9);
+            box-shadow: 0 4px 12px rgba(91, 163, 232, 0.3);
+            border: none;
+        }
+
+        body.high-contrast .btn-secondary {
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        body.high-contrast .btn-outline {
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+
+        body.high-contrast .btn-outline:hover {
+            background: var(--accent-color);
+            color: #FFFFFF;
+        }
+
+        body.high-contrast .bottom-nav {
+            background: var(--bg-primary);
+            border-top: 2px solid var(--border-color);
+        }
+
+        body.high-contrast .nav-item {
+            color: var(--text-muted);
+        }
+
+        body.high-contrast .nav-item.active {
+            color: var(--accent-color);
+        }
+
+        body.high-contrast .nav-item.active::before {
+            background: var(--accent-color);
+            box-shadow: 0 0 8px var(--accent-color);
+        }
+
+        body.high-contrast .header {
+            background: var(--bg-primary);
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        body.high-contrast .back-btn {
+            color: var(--text-primary);
+        }
+
+        body.high-contrast .progress-dot {
+            background: var(--border-color);
+        }
+
+        body.high-contrast .progress-item.completed .progress-dot {
+            background: var(--success-color);
+            box-shadow: 0 0 8px rgba(103, 194, 58, 0.5);
+        }
+
+        body.high-contrast .progress-item.active .progress-dot {
+            background: var(--accent-color);
+            box-shadow: 0 0 8px rgba(91, 163, 232, 0.5);
+        }
+
+        body.high-contrast .progress-item.completed::after {
+            background: var(--success-color);
+        }
+
+        body.high-contrast .toggle-track {
+            background: #333333;
+        }
+
+        body.high-contrast .elder-toggle input:checked+.toggle-track {
+            background: var(--accent-color);
+            box-shadow: 0 0 8px rgba(91, 163, 232, 0.5);
+        }
+
+        body.high-contrast .toggle-thumb {
+            background: #FFFFFF;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+        }
+
+        body.high-contrast .patient-card {
+            background: linear-gradient(135deg, rgba(91, 163, 232, 0.2), rgba(91, 163, 232, 0.1));
+            border-color: rgba(91, 163, 232, 0.3);
+        }
+
+        body.high-contrast .patient-avatar {
+            background: rgba(91, 163, 232, 0.3);
+            border: 3px solid var(--accent-color);
+        }
+
+        body.high-contrast textarea,
+        body.high-contrast input {
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        body.high-contrast textarea::placeholder,
+        body.high-contrast input::placeholder {
+            color: var(--text-muted);
+        }
+
+        body.high-contrast * {
+            color: var(--text-primary) !important;
+        }
+
+        body.high-contrast .btn-primary,
+        body.high-contrast .btn-primary *,
+        body.high-contrast .btn-secondary,
+        body.high-contrast .btn-secondary *,
+        body.high-contrast .btn-outline,
+        body.high-contrast .btn-outline *,
+        body.high-contrast .toast,
+        body.high-contrast .toast *,
+        body.high-contrast .patient-avatar,
+        body.high-contrast .patient-avatar *,
+        body.high-contrast .task-icon,
+        body.high-contrast .task-icon *,
+        body.high-contrast .nav-item,
+        body.high-contrast .nav-item *,
+        body.high-contrast .highlight,
+        body.high-contrast .star,
+        body.high-contrast .star.active,
+        body.high-contrast .progress-step,
+        body.high-contrast .progress-time,
+        body.high-contrast .info-label,
+        body.high-contrast .info-value {
+            color: inherit !important;
+        }
+
+        body.high-contrast .btn-primary,
+        body.high-contrast .btn-primary span,
+        body.high-contrast .btn-outline:hover,
+        body.high-contrast .btn-outline:hover span {
+            color: #FFFFFF !important;
+        }
+
+        body.high-contrast textarea::placeholder,
+        body.high-contrast input::placeholder {
+            color: var(--text-muted) !important;
+        }
+
+        .quick-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 14px 12px;
+            min-height: 48px;
+        }
+
+        body.high-contrast .quick-btn {
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-wrapper">
+        <div class="page active" id="home">
+            <div class="home-container">
+                <div style="text-align: center; padding: 40px 24px;">
+                    <div
+                        style="width: 80px; height: 80px; background: linear-gradient(135deg, var(--accent-color), #2980B9); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
+                        <span style="font-size: 36px; color: #FFFFFF; font-weight: 700;">智</span>
+                    </div>
+                    <h1
+                        style="font-size: var(--font-size-xxl); font-weight: 700; color: var(--text-primary); margin-bottom: 12px;">
+                        智环引诊</h1>
+                    <p style="font-size: var(--font-size-md); color: var(--text-secondary); margin-bottom: 40px;">
+                        智能就诊导航系统</p>
+
+                    <div style="margin-bottom: 20px;">
+                        <p style="font-size: var(--font-size-base); color: var(--text-muted); margin-bottom: 16px;">
+                            请选择您的身份</p>
+                        <button class="btn btn-primary btn-block" style="padding: 20px; margin-bottom: 16px;"
+                            onclick="selectPatient()">
+                            <div style="font-size: var(--font-size-lg); font-weight: 600; margin-bottom: 4px;">我是患者
+                            </div>
+                            <div style="font-size: var(--font-size-sm); opacity: 0.8;">开始就诊流程，使用手环导航</div>
+                        </button>
+                        <button class="btn btn-secondary btn-block" style="padding: 20px;" onclick="selectFamily()">
+                            <div style="font-size: var(--font-size-lg); font-weight: 600; margin-bottom: 4px;">我是家属
+                            </div>
+                            <div style="font-size: var(--font-size-sm); opacity: 0.8;">查看家人就诊进度和位置</div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+    <script src="/js/api-config.js"></script>
+    <script src="js/api-service.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/store.js"></script>
+    <script src="js/main.js"></script>
+</body>
+
+</html>

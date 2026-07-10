@@ -1,53 +1,310 @@
+/**
+ * 智环引诊 - 实时态势监控 Dashboard
+ * 对接后端: GET /admin/api/dashboard/*
+ */
+
+// ===================== 实时时钟 =====================
 setInterval(() => {
     const date = new Date();
     const timeString = date.toISOString().replace('T', ' ').substring(0, 19);
-    document.getElementById('dateInfo').textContent = timeString;
+    const el = document.getElementById('dateInfo');
+    if (el) el.textContent = timeString;
 }, 1000);
 
-function refreshData() {
-    const btn = document.querySelector('.refresh-btn');
-    btn.innerHTML = '刷新中...';
-    setTimeout(() => {
-        btn.innerHTML = '刷新';
-        updateAlarmStatus();
-        alert('数据已刷新');
-    }, 1000);
+// ===================== 工具函数 =====================
+
+/** 格式化数字，添加千分位 */
+function fmtNum(n) {
+    if (n == null) return '--';
+    return Number(n).toLocaleString('zh-CN');
 }
 
-function updateAlarmStatus() {
-    const alarmCard = document.getElementById('alarmCard');
-    const alarmValue = document.getElementById('alarmValue');
-    const alarmStatus = document.getElementById('alarmStatus');
+/** 获取负载状态 CSS 类 */
+function loadStatusClass(status) {
+    if (status === 'danger') return 'danger';
+    if (status === 'warning') return 'warning';
+    return 'normal';
+}
 
-    const count = parseInt(alarmValue.textContent);
+/** 显示错误提示 */
+function showError(context, err) {
+    console.error(`[Dashboard] ${context}:`, err);
+}
 
-    if (count === 0) {
-        alarmCard.classList.remove('alarm');
-        alarmStatus.textContent = '正常';
-        alarmStatus.className = 'kpi-change positive';
-    } else {
-        alarmCard.classList.add('alarm');
-        alarmStatus.innerHTML = '<span>!</span>待处理';
-        alarmStatus.className = 'kpi-change danger';
+// ===================== KPI 指标 =====================
+
+async function loadKpi() {
+    try {
+        const res = await adminApi.getKpi();
+        if (res.code === 200 && res.data) {
+            const d = res.data;
+            updateKpiCard(0, fmtNum(d.todayVisits), null);
+            updateKpiCard(1, fmtNum(d.currentOnsite), null);
+            // 第三张是手环卡片，不更新
+            updateKpiCard(3, fmtNum(d.pendingAlarms), d.pendingAlarms > 0 ? 'danger' : 'positive');
+        }
+    } catch (e) { showError('KPI', e); }
+}
+
+function updateKpiCard(index, value, changeClass) {
+    const cards = document.querySelectorAll('.kpi-card .kpi-value');
+    if (cards[index]) cards[index].textContent = value;
+}
+
+// ===================== 科室负载排行 =====================
+
+async function loadDeptLoad() {
+    try {
+        const res = await adminApi.getDeptLoad();
+        if (res.code === 200 && res.data && Array.isArray(res.data)) {
+            renderDeptLoad(res.data);
+        }
+    } catch (e) { showError('科室负载', e); }
+}
+
+function renderDeptLoad(depts) {
+    const container = document.querySelector('.dept-list');
+    if (!container) return;
+    container.innerHTML = depts.slice(0, 5).map((d, i) => `
+        <div class="dept-row">
+            <div class="dept-name">${escHtml(d.deptName)}</div>
+            <div class="dept-info">
+                <span class="dept-count">${d.queueCount ?? '--'}</span>
+                <div class="dept-bar">
+                    <div class="dept-fill ${loadStatusClass(d.loadStatus)}" style="width:${Math.min(d.utilization || 0, 100)}%;"></div>
+                </div>
+                <span class="dept-percent">${d.utilization ?? 0}%</span>
+            </div>
+        </div>
+    `).join('');
+}
+
+// ===================== 紧急警报 =====================
+
+async function loadAlarms() {
+    try {
+        const res = await adminApi.getAlarms(5);
+        if (res.code === 200 && res.data && Array.isArray(res.data)) {
+            renderAlarms(res.data);
+        }
+    } catch (e) { showError('警报', e); }
+}
+
+function renderAlarms(alarms) {
+    const container = document.querySelector('.alarm-list');
+    if (!container) return;
+    if (!alarms.length) {
+        container.innerHTML = '<div style="padding:20px;text-align:center;color:#868e96;">暂无警报</div>';
+        return;
+    }
+    container.innerHTML = alarms.map((a, i) => `
+        <div class="alarm-item" id="alarm-${a.id || i}">
+            <div class="alarm-indicator ${a.level >= 3 ? 'urgent' : ''}"></div>
+            <div class="alarm-content">
+                <div class="alarm-time">${a.createdAt ? a.createdAt.substring(11, 16) : '--'}</div>
+                <div class="alarm-location">${escHtml(a.location || '--')}</div>
+                <div class="alarm-desc">${escHtml(a.description || a.type || '--')}</div>
+            </div>
+            <button class="alarm-btn ${a.level >= 3 ? 'urgent' : ''}" onclick="handleAlarmAction(${a.id})">立即处理</button>
+        </div>
+    `).join('');
+}
+
+// ===================== 患者来源分布 =====================
+
+async function loadSourceDistribution() {
+    try {
+        const res = await adminApi.getSourceDistribution();
+        if (res.code === 200 && res.data) {
+            renderSourceDistribution(res.data);
+        }
+    } catch (e) { showError('来源分布', e); }
+}
+
+function renderSourceDistribution(data) {
+    // data 格式可能是数组 [{label, count, percentage}] 或 {total, items}
+    const items = Array.isArray(data) ? data : (data.items || []);
+    if (!items.length) return;
+
+    const legendContainer = document.querySelector('.source-legend');
+    const pieContainer = document.querySelector('.source-pie');
+    if (!legendContainer && !pieContainer) return;
+
+    const colors = ['#5BA0E6', '#5BCFA0', '#F0D490', '#F0AFAF'];
+    const total = items.reduce((s, i) => s + (i.count || 0), 0);
+
+    // 更新饼图
+    if (pieContainer) {
+        let offset = 0;
+        const circumference = 502;
+        const circlesHtml = items.map((item, i) => {
+            const pct = total > 0 ? (item.count / total) : 0;
+            const dashLen = Math.max(pct * circumference, 0);
+            const html = `<circle cx="100" cy="100" r="80" fill="none" stroke="${colors[i]}" stroke-width="25"
+                stroke-dasharray="${dashLen} ${circumference}" stroke-dashoffset="-${offset}"
+                transform="rotate(-90 100 100)" />`;
+            offset += dashLen;
+            return html;
+        }).join('');
+        pieContainer.querySelector('svg') && (pieContainer.querySelector('svg').innerHTML =
+            pieContainer.querySelector('svg').innerHTML.replace(
+                /<circle cx="100" cy="100" r="80"[^>]*\/?>/g, ''
+            ) + circlesHtml);
+    }
+
+    // 更新图例
+    if (legendContainer) {
+        legendContainer.innerHTML = items.map((item, i) => `
+            <div class="legend-item">
+                <span class="legend-color" style="background:${colors[i]};"></span>
+                <span class="legend-label">${escHtml(item.label)}</span>
+                <span class="legend-value">${item.percentage ?? Math.round((item.count/total)*100)}%</span>
+            </div>
+        `).join('');
     }
 }
 
-function handleAlarm(id, event) {
-    event.stopPropagation();
-    const btn = event.target;
-    btn.innerHTML = '处理中...';
-    btn.disabled = true;
-    setTimeout(() => {
-        btn.innerHTML = '已处理';
-        btn.style.background = '#4caf50';
-        alert('警报已处理');
-    }, 800);
+// ===================== 流量趋势 =====================
+
+async function loadTrafficTrend() {
+    try {
+        const res = await adminApi.getTrafficTrend();
+        if (res.code === 200 && res.data && Array.isArray(res.data)) {
+            renderTrafficTrend(res.data);
+        }
+    } catch (e) { showError('流量趋势', e); }
 }
 
-window.addEventListener('load', function () {
-    updateAlarmStatus();
-    const alarmBtns = document.querySelectorAll('.alarm-btn');
-    alarmBtns.forEach((btn, index) => {
-        btn.addEventListener('click', (event) => handleAlarm(index, event));
+function renderTrafficTrend(data) {
+    const svg = document.querySelector('.line-chart-svg');
+    if (!svg || !data.length) return;
+
+    const maxVal = Math.max(...data.map(d => d.visitCount || 0), 1);
+    const w = 800, h = 200, padX = 50, padR = 30;
+    const points = data.map((d, i) => {
+        const x = padX + (i / Math.max(data.length - 1, 1)) * (w - padX - padR);
+        const y = h - 20 - ((d.visitCount || 0) / maxVal) * (h - 60);
+        return `${x},${y}`;
     });
+
+    const polyline = points.join(' ');
+    const fillPath = `M ${padX},${h - 20} L ${polyline} L ${points[points.length - 1].split(',')[0]},${h - 20} Z`;
+
+    svg.innerHTML = `
+        <defs>
+            <linearGradient id="lineGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="rgba(66,133,244,0.3)" />
+                <stop offset="100%" stop-color="rgba(66,133,244,0)" />
+            </linearGradient>
+        </defs>
+        <path d="${polyline}" fill="none" stroke="#4285f4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        <path d="${fillPath}" fill="url(#lineGradient)" />
+        ${data.map((d, i) => {
+            const [cx, cy] = points[i].split(',');
+            return `<circle cx="${cx}" cy="${cy}" r="4" fill="#4285f4" />`;
+        }).join('')}
+    `;
+}
+
+// ===================== 系统运行状态 =====================
+
+async function loadSystemStatus() {
+    try {
+        const res = await adminApi.getSystemStatus();
+        if (res.code === 200 && res.data) {
+            renderSystemStatus(res.data);
+        }
+    } catch (e) { showError('系统状态', e); }
+}
+
+function renderSystemStatus(data) {
+    // 更新状态摘要
+    const summaryEl = document.querySelector('.system-status-summary span:last-child');
+    if (summaryEl && data.status) {
+        summaryEl.textContent = data.status === 'UP' ? '系统运行正常' : '系统异常';
+    }
+}
+
+// ===================== 警报处理 =====================
+
+async function handleAlarmAction(alarmId) {
+    try {
+        await adminApi.handleAlarm(alarmId, '控制中心快速处理');
+        // 重新加载警报列表
+        loadAlarms();
+        loadKpi();
+    } catch (e) {
+        alert('处理失败: ' + e.message);
+    }
+}
+
+// 兼容旧版调用 (直接点击按钮)
+function handleAlarm(index, event) {
+    if (event) event.stopPropagation();
+    const btn = event ? event.target : document.querySelector(`.alarm-btn`);
+    if (btn) {
+        btn.innerHTML = '处理中...';
+        btn.disabled = true;
+    }
+    // 尝试从 DOM 中找到 alarm id
+    const alarmItem = btn?.closest('.alarm-item');
+    const alarmId = alarmItem?.id?.replace('alarm-', '');
+    if (alarmId) {
+        handleAlarmAction(Number(alarmId)).finally(() => {
+            if (btn) { btn.innerHTML = '已处理'; btn.style.background = '#4caf50'; }
+        });
+    } else {
+        setTimeout(() => {
+            if (btn) { btn.innerHTML = '已处理'; btn.style.background = '#4caf50'; }
+        }, 800);
+    }
+}
+
+// ===================== 全局刷新 =====================
+
+function refreshAllData() {
+    loadKpi();
+    loadDeptLoad();
+    loadAlarms();
+    loadSourceDistribution();
+    loadTrafficTrend();
+    loadSystemStatus();
+}
+
+function refreshData() {
+    const btn = document.querySelector('.refresh-btn');
+    if (btn) { btn.innerHTML = '刷新中...'; btn.disabled = true; }
+    refreshAllData();
+    setTimeout(() => {
+        if (btn) { btn.innerHTML = '刷新'; btn.disabled = false; }
+    }, 1500);
+}
+
+// ===================== HTML 转义 =====================
+
+function escHtml(str) {
+    if (!str) return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+// ===================== 页面初始化 =====================
+
+window.addEventListener('load', async () => {
+    // 检查登录状态
+    const loggedIn = await initAuth();
+    if (!loggedIn) {
+        showLoginDialog('请使用管理员账号登录');
+        // 监听登录成功事件（登录对话框关闭后刷新数据）
+        const observer = new MutationObserver(() => {
+            if (!document.getElementById('loginOverlay')) {
+                observer.disconnect();
+                refreshAllData();
+            }
+        });
+        observer.observe(document.body, { childList: true });
+        return;
+    }
+    refreshAllData();
 });
