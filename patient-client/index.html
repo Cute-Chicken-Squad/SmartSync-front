@@ -3,24 +3,48 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#2C3E50">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>智环引诊 - 患者服务</title>
+    <link rel="stylesheet" href="css/loading.css">
     <style>
         :root {
-            --primary-color: #2C3E50;
-            --accent-color: #3498DB;
-            --success-color: #27AE60;
-            --warning-color: #F39C12;
-            --danger-color: #E74C3C;
+            /* 智环引诊 — 医疗专业配色系统 */
+            --primary-color: #1B3A4B;
+            --accent-color: #3B82C0;
+            --accent-hover: #2F6EA8;
+            --accent-light: #EBF4FC;
+            --accent-dark: #256BA0;
+            --accent-subtle: rgba(59,130,192,0.06);
+            --success-color: #2D9F5C;
+            --success-light: #E8F7EF;
+            --success-dark: #228B47;
+            --warning-color: #E8992D;
+            --warning-light: #FEF6EC;
+            --warning-dark: #C47A1A;
+            --danger-color: #D94848;
+            --danger-light: #FDEDED;
+            --danger-dark: #BC3A3A;
             --bg-primary: #FFFFFF;
-            --bg-secondary: #F8F9FA;
-            --text-primary: #1A1A1A;
-            --text-secondary: #5A5A5A;
-            --text-muted: #9A9A9A;
-            --border-color: #E0E0E0;
+            --bg-secondary: #F7F8FA;
+            --bg-tertiary: #EDF0F4;
+            --text-primary: #1A1D21;
+            --text-secondary: #555A60;
+            --text-muted: #959BA3;
+            --text-inverse: #FFFFFF;
+            --border-color: #E0E3E8;
+            --border-light: #EDF0F4;
+            --shadow-sm: 0 1px 3px rgba(27,58,75,0.05), 0 0 0 1px rgba(27,58,75,0.02);
+            --shadow-md: 0 4px 16px rgba(27,58,75,0.07), 0 0 0 1px rgba(27,58,75,0.03);
+            --shadow-lg: 0 8px 32px rgba(27,58,75,0.09), 0 0 0 1px rgba(27,58,75,0.04);
+            --shadow-card: 0 2px 8px rgba(27,58,75,0.05), 0 0 0 1px rgba(0,0,0,0.04);
+            --radius-sm: 8px;
             --radius-md: 12px;
             --radius-lg: 16px;
+            --radius-xl: 20px;
+            --radius-full: 9999px;
             --font-size-xs: 12px;
             --font-size-sm: 13px;
             --font-size-base: 14px;
@@ -28,6 +52,9 @@
             --font-size-lg: 17px;
             --font-size-xl: 20px;
             --font-size-xxl: 26px;
+            --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-smooth: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-expressive: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         body.elder-mode {
@@ -38,12 +65,12 @@
             --font-size-lg: 22px;
             --font-size-xl: 26px;
             --font-size-xxl: 32px;
-            --accent-color: #2980B9;
+            --accent-color: #256BA0;
             --text-primary: #000000;
             --text-secondary: #333333;
             --text-muted: #666666;
-            --border-color: #CCCCCC;
-            --bg-secondary: #F0F0F0;
+            --border-color: #C5C9CF;
+            --bg-secondary: #F0F1F4;
             --btn-min-height: 56px;
             --btn-gap: 16px;
             --border-width: 2px;
@@ -120,8 +147,13 @@
             display: flex;
             align-items: center;
             padding: 16px 20px;
-            background: var(--bg-primary);
-            border-bottom: 1px solid var(--border-color);
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-light);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
         .back-btn {
@@ -132,11 +164,22 @@
             justify-content: center;
             background: var(--bg-secondary);
             border-radius: 50%;
-            border: none;
+            border: 1px solid var(--border-light);
             font-size: 18px;
             cursor: pointer;
             margin-right: 12px;
             color: var(--text-secondary);
+            transition: var(--transition-fast);
+        }
+
+        .back-btn:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .back-btn:active {
+            transform: scale(0.94);
+            background: var(--border-light);
         }
 
         .header-title {
@@ -150,13 +193,26 @@
             border-radius: var(--radius-lg);
             padding: 20px;
             margin-bottom: 16px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-card);
+            border: 1px solid var(--border-light);
+            transition: var(--transition-smooth);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-md);
+            border-color: var(--border-color);
         }
 
         .card-gradient {
-            background: linear-gradient(135deg, rgba(52, 152, 219, 0.08), rgba(52, 152, 219, 0.02));
-            border-color: rgba(52, 152, 219, 0.2);
+            background: linear-gradient(135deg, var(--accent-subtle), rgba(59,130,192,0.02));
+            border-color: rgba(59,130,192,0.12);
+        }
+
+        .card-accent-left {
+            border-left: 3px solid var(--accent-color);
+            padding-left: 17px;
         }
 
         .btn {
@@ -166,13 +222,33 @@
             font-size: var(--font-size-md);
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             min-height: var(--btn-min-height, 52px);
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 0.01em;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, var(--accent-color), #2980B9);
+            background: var(--accent-color);
             color: #FFFFFF;
+            box-shadow: 0 2px 8px rgba(59,130,192,0.25);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            box-shadow: 0 4px 16px rgba(59,130,192,0.35);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:active {
+            background: var(--accent-dark);
+            box-shadow: 0 2px 6px rgba(59,130,192,0.2);
+            transform: scale(0.98);
         }
 
         .btn-secondary {
@@ -181,10 +257,16 @@
             border: 1px solid var(--border-color);
         }
 
+        .btn-secondary:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+
         .btn-outline {
             background: transparent;
             color: var(--accent-color);
-            border: 2px solid var(--accent-color);
+            border: 1.5px solid var(--accent-color);
         }
 
         .btn-outline:hover {
@@ -196,6 +278,7 @@
             width: 100%;
         }
 
+        /* 底部导航基础样式 — 与 .app-wrapper 同宽 (420px 居中) */
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -203,25 +286,20 @@
             transform: translateX(-50%);
             width: 100%;
             max-width: 420px;
-            display: flex;
+            display: flex; justify-content: space-around; align-items: center;
             background: var(--bg-primary);
-            border-top: 1px solid var(--border-color);
-            padding: 8px 0;
+            border-top: 1px solid var(--border-light, #EDF0F4);
+            padding: 6px 0 calc(6px + env(safe-area-inset-bottom, 0));
             z-index: 1000;
+            box-shadow: 0 -2px 12px rgba(27,58,75,0.05);
         }
-
         .nav-item {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 3px;
-            padding: 8px 0;
-            border: none;
-            background: none;
-            cursor: pointer;
+            display: flex; flex-direction: column; align-items: center; gap: 2px;
+            padding: 4px 12px; border: none; background: none; cursor: pointer;
+            color: var(--text-muted); transition: color 0.2s;
+            -webkit-tap-highlight-color: transparent; touch-action: manipulation;
         }
-
+        .nav-item.active { color: var(--accent-color); }
         .nav-item .nav-text {
             font-size: var(--font-size-xs);
             color: var(--text-muted);
@@ -356,37 +434,39 @@
         .progress-item {
             display: flex;
             align-items: flex-start;
-            gap: 12px;
-            margin-bottom: 16px;
+            gap: 16px;
+            margin-bottom: 20px;
+            position: relative;
         }
 
         .progress-dot {
-            width: 10px;
-            height: 10px;
+            width: 12px;
+            height: 12px;
             border-radius: 50%;
             background: var(--border-color);
             flex-shrink: 0;
             margin-top: 4px;
+            transition: all 0.3s ease;
+            position: relative;
         }
 
         .progress-item.completed .progress-dot {
             background: var(--success-color);
+            box-shadow: 0 0 0 3px var(--success-light);
         }
 
         .progress-item.active .progress-dot {
             background: var(--accent-color);
-            animation: pulse 1.5s infinite;
+            box-shadow: 0 0 0 3px var(--accent-light);
+            animation: pulse 2s infinite;
         }
 
         @keyframes pulse {
-
-            0%,
-            100% {
-                box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.4);
+            0%, 100% {
+                box-shadow: 0 0 0 3px var(--accent-light);
             }
-
             50% {
-                box-shadow: 0 0 0 6px rgba(52, 152, 219, 0);
+                box-shadow: 0 0 0 8px rgba(59,130,192,0);
             }
         }
 
@@ -679,10 +759,240 @@
             background: var(--bg-secondary);
             border: 2px solid var(--border-color);
         }
+
+        /* ==================== 精装组件样式 ==================== */
+
+        /* 报告卡片 */
+        .report-item {
+            background: var(--bg-primary);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            margin-bottom: 12px;
+            border: 1px solid var(--border-light);
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+        .report-item:hover {
+            box-shadow: var(--shadow-md);
+            border-color: var(--accent-color);
+            transform: translateY(-1px);
+        }
+        .report-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .report-title {
+            font-size: var(--font-size-md);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .report-meta {
+            font-size: var(--font-size-xs);
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+        .report-preview {
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 12px;
+            padding: 12px;
+            background: var(--bg-secondary);
+            border-radius: var(--radius-sm);
+        }
+        .report-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .report-status {
+            padding: 4px 12px;
+            border-radius: var(--radius-full);
+            font-size: var(--font-size-xs);
+            font-weight: 500;
+            letter-spacing: 0.02em;
+        }
+        .report-status.normal {
+            background: var(--success-light);
+            color: var(--success-dark);
+        }
+        .report-status.completed {
+            background: var(--accent-light);
+            color: var(--accent-color);
+        }
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: var(--font-size-sm);
+            min-height: 36px;
+        }
+
+        /* 菜单项 */
+        .menu-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 0;
+            border-bottom: 1px solid var(--border-light);
+            cursor: pointer;
+            background: none;
+            border-left: none;
+            border-right: none;
+            border-top: none;
+            width: 100%;
+            text-align: left;
+            transition: var(--transition-fast);
+        }
+        .menu-item:hover {
+            padding-left: 4px;
+            color: var(--accent-color);
+        }
+        .menu-item:last-child {
+            border-bottom: none;
+        }
+        .menu-text {
+            font-size: var(--font-size-md);
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+        .menu-arrow {
+            color: var(--text-muted);
+            font-size: 18px;
+        }
+
+        /* 信息行 */
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+        }
+        .info-row:not(:last-child) {
+            border-bottom: 1px solid var(--border-light);
+        }
+        .info-label {
+            font-size: var(--font-size-sm);
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        .info-value {
+            font-size: var(--font-size-sm);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .highlight {
+            color: var(--accent-color);
+        }
+
+        /* 标签/徽章 */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 12px;
+            border-radius: var(--radius-full);
+            font-size: var(--font-size-xs);
+            font-weight: 500;
+            letter-spacing: 0.02em;
+        }
+        .badge-accent {
+            background: var(--accent-light);
+            color: var(--accent-color);
+        }
+        .badge-success {
+            background: var(--success-light);
+            color: var(--success-dark);
+        }
+        .badge-warning {
+            background: var(--warning-light);
+            color: var(--warning-dark);
+        }
+        .badge-danger {
+            background: var(--danger-light);
+            color: var(--danger-dark);
+        }
+
+        /* 语音浮动按钮 */
+        .voice-float-btn {
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            color: #FFFFFF;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(59,130,192,0.3);
+            cursor: pointer;
+            z-index: 1000;
+            transition: var(--transition-smooth);
+            border: none;
+            opacity: 0;
+            visibility: hidden;
+            transform: scale(0.8);
+        }
+        .voice-float-btn.visible {
+            opacity: 1;
+            visibility: visible;
+            transform: scale(1);
+        }
+        .voice-float-btn:hover {
+            transform: scale(1.08);
+            box-shadow: 0 6px 28px rgba(59,130,192,0.4);
+        }
+        .voice-float-btn:active {
+            transform: scale(0.95);
+        }
+        .voice-float-btn.active {
+            background: var(--accent-dark);
+            animation: voicePulse 1.5s infinite;
+        }
+        @keyframes voicePulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(59,130,192,0.4); }
+            50% { box-shadow: 0 0 0 16px rgba(59,130,192,0); }
+        }
+
+        /* 评分星级 */
+        .star {
+            font-size: 40px;
+            color: #E0E3E8;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-block;
+            line-height: 1;
+        }
+        .star:hover {
+            transform: scale(1.15);
+            color: #F5C518;
+        }
+        .star.active {
+            color: #F5C518;
+        }
+        .star.active:hover {
+            color: #D4A90D;
+        }
+
+        /* 渐变分割线 */
+        .divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border-color), transparent);
+            margin: 20px 0;
+        }
+
+        /* 动画优化 */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
     </style>
 </head>
 
 <body>
+    <div class="offline-bar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/></svg>当前处于离线状态，显示缓存数据</div>
     <div class="app-wrapper">
         <div class="page active" id="home">
             <div class="home-container">
@@ -812,12 +1122,6 @@
                 </div>
             </div>
 
-            <div class="bottom-nav">
-                <button class="nav-item active" onclick="showPage('overview')"><span class="nav-text">首页</span></button>
-                <button class="nav-item" onclick="showPage('reports')"><span class="nav-text">报告</span></button>
-                <button class="nav-item" onclick="showPage('reminder')"><span class="nav-text">复诊</span></button>
-                <button class="nav-item" onclick="showPage('profile')"><span class="nav-text">我的</span></button>
-            </div>
         </div>
 
         <div class="page" id="return-bracelet">
@@ -856,12 +1160,6 @@
                         </li>
                     </ul>
                 </div>
-            </div>
-            <div class="bottom-nav">
-                <button class="nav-item" onclick="showPage('overview')"><span class="nav-text">首页</span></button>
-                <button class="nav-item" onclick="showPage('reports')"><span class="nav-text">报告</span></button>
-                <button class="nav-item" onclick="showPage('reminder')"><span class="nav-text">复诊</span></button>
-                <button class="nav-item active" onclick="showPage('profile')"><span class="nav-text">我的</span></button>
             </div>
         </div>
 
@@ -918,12 +1216,6 @@
                         onclick="showToast('导航已开始')">开始导航</button>
                 </div>
             </div>
-            <div class="bottom-nav">
-                <button class="nav-item active" onclick="showPage('overview')"><span class="nav-text">首页</span></button>
-                <button class="nav-item" onclick="showPage('reports')"><span class="nav-text">报告</span></button>
-                <button class="nav-item" onclick="showPage('reminder')"><span class="nav-text">复诊</span></button>
-                <button class="nav-item" onclick="showPage('profile')"><span class="nav-text">我的</span></button>
-            </div>
         </div>
 
         <div class="page" id="chat">
@@ -965,12 +1257,6 @@
                     </div>
                 </div>
             </div>
-            <div class="bottom-nav">
-                <button class="nav-item" onclick="showPage('overview')"><span class="nav-text">首页</span></button>
-                <button class="nav-item" onclick="showPage('reports')"><span class="nav-text">报告</span></button>
-                <button class="nav-item" onclick="showPage('reminder')"><span class="nav-text">复诊</span></button>
-                <button class="nav-item" onclick="showPage('profile')"><span class="nav-text">我的</span></button>
-            </div>
         </div>
 
         <div class="page" id="emergency">
@@ -990,12 +1276,6 @@
                         style="background: linear-gradient(135deg, var(--danger-color), #C0392B); color: #FFFFFF; padding: 18px 48px; font-size: 16px; border: none; border-radius: var(--radius-md);"
                         onclick="confirmEmergency()">确认求助</button>
                 </div>
-            </div>
-            <div class="bottom-nav">
-                <button class="nav-item" onclick="showPage('overview')"><span class="nav-text">首页</span></button>
-                <button class="nav-item" onclick="showPage('reports')"><span class="nav-text">报告</span></button>
-                <button class="nav-item" onclick="showPage('reminder')"><span class="nav-text">复诊</span></button>
-                <button class="nav-item" onclick="showPage('profile')"><span class="nav-text">我的</span></button>
             </div>
         </div>
 
@@ -1027,12 +1307,6 @@
                             style="font-size: 11px; padding: 4px 10px; border-radius: 10px; background: rgba(243, 156, 18, 0.1); color: var(--warning-color);">检验中</span>
                     </div>
                 </div>
-            </div>
-            <div class="bottom-nav">
-                <button class="nav-item" onclick="showPage('overview')"><span class="nav-text">首页</span></button>
-                <button class="nav-item active" onclick="showPage('reports')"><span class="nav-text">报告</span></button>
-                <button class="nav-item" onclick="showPage('reminder')"><span class="nav-text">复诊</span></button>
-                <button class="nav-item" onclick="showPage('profile')"><span class="nav-text">我的</span></button>
             </div>
         </div>
 
@@ -1069,12 +1343,6 @@
                     <button class="btn btn-secondary" style="flex: 1;" onclick="shareReport()">分享报告</button>
                 </div>
             </div>
-            <div class="bottom-nav">
-                <button class="nav-item" onclick="showPage('overview')"><span class="nav-text">首页</span></button>
-                <button class="nav-item" onclick="showPage('reports')"><span class="nav-text">报告</span></button>
-                <button class="nav-item" onclick="showPage('reminder')"><span class="nav-text">复诊</span></button>
-                <button class="nav-item" onclick="showPage('profile')"><span class="nav-text">我的</span></button>
-            </div>
         </div>
 
         <div class="page" id="reminder">
@@ -1110,12 +1378,6 @@
                         onclick="addToCalendar()">添加到日历</button>
                 </div>
             </div>
-            <div class="bottom-nav">
-                <button class="nav-item" onclick="showPage('overview')"><span class="nav-text">首页</span></button>
-                <button class="nav-item" onclick="showPage('reports')"><span class="nav-text">报告</span></button>
-                <button class="nav-item active" onclick="showPage('reminder')"><span class="nav-text">复诊</span></button>
-                <button class="nav-item" onclick="showPage('profile')"><span class="nav-text">我的</span></button>
-            </div>
         </div>
 
         <div class="page" id="rating">
@@ -1143,12 +1405,6 @@
                     <button class="btn btn-primary btn-block" style="margin-top: 20px;"
                         onclick="submitRating()">提交评价</button>
                 </div>
-            </div>
-            <div class="bottom-nav">
-                <button class="nav-item" onclick="showPage('overview')"><span class="nav-text">首页</span></button>
-                <button class="nav-item" onclick="showPage('reports')"><span class="nav-text">报告</span></button>
-                <button class="nav-item" onclick="showPage('reminder')"><span class="nav-text">复诊</span></button>
-                <button class="nav-item active" onclick="showPage('profile')"><span class="nav-text">我的</span></button>
             </div>
         </div>
 
@@ -1226,12 +1482,6 @@
                 </div>
                 <button class="btn btn-primary btn-block" onclick="showPage('overview')">返回就诊概览</button>
             </div>
-            <div class="bottom-nav">
-                <button class="nav-item" onclick="showPage('overview')"><span class="nav-text">首页</span></button>
-                <button class="nav-item" onclick="showPage('reports')"><span class="nav-text">报告</span></button>
-                <button class="nav-item" onclick="showPage('reminder')"><span class="nav-text">复诊</span></button>
-                <button class="nav-item active" onclick="showPage('profile')"><span class="nav-text">我的</span></button>
-            </div>
         </div>
 
         <div class="page" id="profile">
@@ -1293,12 +1543,6 @@
                         </label>
                     </div>
                 </div>
-            </div>
-            <div class="bottom-nav">
-                <button class="nav-item" onclick="showPage('overview')"><span class="nav-text">首页</span></button>
-                <button class="nav-item" onclick="showPage('reports')"><span class="nav-text">报告</span></button>
-                <button class="nav-item" onclick="showPage('reminder')"><span class="nav-text">复诊</span></button>
-                <button class="nav-item active" onclick="showPage('profile')"><span class="nav-text">我的</span></button>
             </div>
         </div>
 
@@ -1393,12 +1637,6 @@
                     <button class="btn btn-primary btn-block" style="margin-top: 16px;"
                         onclick="bindFamily()">绑定手环</button>
                 </div>
-            </div>
-            <div class="bottom-nav">
-                <button class="nav-item" onclick="showPage('overview')"><span class="nav-text">首页</span></button>
-                <button class="nav-item" onclick="showPage('reports')"><span class="nav-text">报告</span></button>
-                <button class="nav-item" onclick="showPage('reminder')"><span class="nav-text">复诊</span></button>
-                <button class="nav-item active" onclick="showPage('profile')"><span class="nav-text">我的</span></button>
             </div>
         </div>
     </div>
@@ -1507,12 +1745,7 @@
             }
         }
 
-        function confirmReturn() {
-            showToast('手环已归还，感谢您的使用！', 'success');
-            setTimeout(() => {
-                showPage('rating');
-            }, 1500);
-        }
+        // confirmReturn 定义在下方异步版本中（带 API 调用），此处已移除旧版
 
         function toggleFamilyMode(checkbox) {
             if (checkbox.checked) {
@@ -1642,8 +1875,24 @@
         }
     </script>
     <script src="/js/api-config.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/store.js"></script>
     <script src="js/api-service.js"></script>
+    <script src="js/cache.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/pages.js"></script>
     <script src="js/main.js"></script>
+    <script>
+        // 初始化优化模块
+        document.addEventListener('DOMContentLoaded', function() {
+            setupPages();
+            initNetworkMonitor();
+            initKeyboardAdapt();
+            if (Device.hasTouch()) {
+                document.body.classList.add('touch-device');
+            }
+        });
+    </script>
 </body>
 
 </html>

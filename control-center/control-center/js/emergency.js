@@ -30,26 +30,57 @@ function renderAlarmList(alarms) {
     const container = document.querySelector('.alarm-list, .data-table tbody');
     if (!container) return;
 
+    // 判断容器类型：.alarm-list 是卡片式布局，tbody 是表格布局
+    const isTableBody = container.tagName === 'TBODY';
+
     if (!alarms.length) {
-        container.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:#868e96;">暂无警报</td></tr>';
+        container.innerHTML = isTableBody
+            ? '<tr><td colspan="7" style="text-align:center;padding:20px;color:#868e96;">暂无警报</td></tr>'
+            : '<div style="padding:20px;text-align:center;color:#868e96;">暂无警报</div>';
         return;
     }
 
-    container.innerHTML = alarms.map(a => `
-        <tr id="alarm-${a.id}" class="${a.level >= 3 ? 'danger' : ''}">
-            <td>${a.alarmCode || a.id}</td>
-            <td>${alarmTypeLabel(a.type)}</td>
-            <td>${a.level || '--'}</td>
-            <td>${escHtml(a.location || '--')}</td>
-            <td>${escHtml(a.patientName || '--')}</td>
-            <td><span class="badge ${statusBadgeClass(a.status)}">${statusLabel(a.status)}</span></td>
-            <td>
-                <button class="btn-sm btn-primary" onclick="showPatientDetail('${escHtml(a.patientName||'未知')}', ${a.id})">详情</button>
-                ${a.status === 'pending' ? `<button class="btn-sm btn-success" onclick="handleAlarmDirect(${a.id})">处理</button>` : ''}
-                ${a.status === 'pending' ? `<button class="btn-sm" onclick="ignoreAlarmById(${a.id})">忽略</button>` : ''}
-            </td>
-        </tr>
-    `).join('');
+    if (isTableBody) {
+        // 表格模式（今日处理记录 / alarm-list.html）
+        container.innerHTML = alarms.map(a => `
+            <tr id="alarm-${a.id}" class="${a.level >= 3 ? 'danger' : ''}">
+                <td>${a.alarmCode || a.id}</td>
+                <td>${alarmTypeLabel(a.type)}</td>
+                <td>${a.level || '--'}</td>
+                <td>${escHtml(a.location || '--')}</td>
+                <td>${escHtml(a.patientName || '--')}</td>
+                <td><span class="badge ${statusBadgeClass(a.status)}">${statusLabel(a.status)}</span></td>
+                <td>
+                    <button class="btn-sm btn-primary" onclick="showPatientDetail('${escHtml(a.patientName||'未知')}', ${a.id})">详情</button>
+                    ${a.status === 'pending' ? `<button class="btn-sm btn-success" onclick="handleAlarmDirect(${a.id})">处理</button>` : ''}
+                    ${a.status === 'pending' ? `<button class="btn-sm" onclick="ignoreAlarmById(${a.id})">忽略</button>` : ''}
+                </td>
+            </tr>
+        `).join('');
+    } else {
+        // 卡片模式（紧急情况主页 .alarm-list）
+        container.innerHTML = alarms.map(a => {
+            const timeStr = a.createdAt
+                ? a.createdAt.substring(11, 19)
+                : '--:--:--';
+            const isDanger = a.level >= 3;
+            return `
+            <div class="alarm-item${isDanger ? ' danger' : ''}" id="alarm-${a.id}">
+                <div class="alarm-info">
+                    <div class="alarm-content">
+                        <div class="alarm-time">${timeStr}</div>
+                        <div class="alarm-location">${escHtml(a.location || '--')}</div>
+                        <div class="alarm-desc">${escHtml(alarmTypeLabel(a.type))} - ${escHtml(a.patientName || '未知患者')}</div>
+                    </div>
+                </div>
+                <div class="alarm-actions">
+                    <button class="alarm-btn primary" onclick="showPatientDetail('${escHtml(a.patientName||'未知')}', ${a.id})">查看详情</button>
+                    ${a.status === 'pending' ? `<button class="alarm-btn success" onclick="handleAlarmDirect(${a.id})">立即处理</button>` : ''}
+                    ${a.status === 'pending' ? `<button class="alarm-btn secondary" onclick="ignoreAlarmById(${a.id})">忽略</button>` : ''}
+                </div>
+            </div>`;
+        }).join('');
+    }
 }
 
 function updatePagination(pageData) {

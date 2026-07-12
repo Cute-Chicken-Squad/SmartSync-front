@@ -4,24 +4,25 @@
 }
 
 .emergency-icon {
-    width: 100px;
-    height: 100px;
+    width: 96px;
+    height: 96px;
     background: var(--danger-color);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--bg-primary);
-    font-size: 48px;
-    font-weight: bold;
+    color: #FFFFFF;
+    font-size: 36px;
+    font-weight: 700;
     margin: 0 auto 30px;
+    box-shadow: 0 8px 24px rgba(217,72,72,0.3);
 }
 
 .emergency-title {
     font-size: 24px;
     font-weight: 600;
     margin-bottom: 10px;
-    color: var(--danger-color);
+    color: var(--danger-dark);
 }
 
 .emergency-desc {
@@ -30,6 +31,7 @@
     margin-bottom: 40px;
 }
 
+/* 评分 */
 .rating-section {
     text-align: center;
     padding: 40px 0;
@@ -39,6 +41,7 @@
     font-size: 18px;
     font-weight: 600;
     margin-bottom: 30px;
+    color: var(--text-primary);
 }
 
 .stars {
@@ -50,14 +53,14 @@
 
 .star {
     font-size: 32px;
-    color: var(--border-light);
+    color: #E0E3E8;
     cursor: pointer;
-    transition: var(--transition-base);
+    transition: all 0.2s ease;
+    display: inline-block;
 }
 
-.star.active {
-    color: #fbbc05;
-}
+.star:hover { transform: scale(1.15); }
+.star.active { color: #F5C518; }
 
 .rating-options {
     display: grid;
@@ -73,11 +76,11 @@
     text-align: center;
     font-size: 14px;
     cursor: pointer;
-    transition: var(--transition-base);
+    transition: var(--transition-fast);
 }
 
 .rating-option.active {
-    background: var(--bg-light);
-    border-color: var(--primary-color);
-    color: var(--primary-color);
+    background: var(--accent-light);
+    border-color: var(--accent-color);
+    color: var(--accent-color);
 }

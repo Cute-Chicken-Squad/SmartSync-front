@@ -50,8 +50,22 @@ const TokenStore = {
         localStorage.removeItem(this._bizUserKey);
     },
 
+    // --- 患者 Token ---
+    _patientTokenKey: 'smartsync_patient_token',
+    _patientUserKey: 'smartsync_patient_user',
+    getPatientToken() { return localStorage.getItem(this._patientTokenKey); },
+    setPatientToken(token) { localStorage.setItem(this._patientTokenKey, token); },
+    getPatientUser() {
+        try { return JSON.parse(localStorage.getItem(this._patientUserKey)); } catch { return null; }
+    },
+    setPatientUser(user) { localStorage.setItem(this._patientUserKey, JSON.stringify(user)); },
+    clearPatient() {
+        localStorage.removeItem(this._patientTokenKey);
+        localStorage.removeItem(this._patientUserKey);
+    },
+
     // --- 全部清除 ---
-    clearAll() { this.clearAdmin(); this.clearBiz(); },
+    clearAll() { this.clearAdmin(); this.clearBiz(); this.clearPatient(); },
 };
 
 // ===================== 通用请求 =====================
@@ -69,8 +83,11 @@ async function apiRequest(config, endpoint, options = {}) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), options.timeout || timeout);
 
-    // 获取对应 Token
-    const token = config === 'admin' ? TokenStore.getAdminToken() : TokenStore.getBizToken();
+    // 获取对应 Token (patient 类型优先用患者 Token)
+    const token = config === 'admin'
+        ? TokenStore.getAdminToken()
+        : (options._usePatientToken === false ? TokenStore.getBizToken()
+            : (TokenStore.getPatientToken() || TokenStore.getBizToken()));
 
     const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
     if (token) {
@@ -233,6 +250,34 @@ const adminApi = {
     deleteSubstation(name) { return apiRequest('admin', `/settings/substations/${name}`, { method: 'DELETE' }); },
     backupNow() { return apiRequest('admin', '/settings/backup', { method: 'POST' }); },
     restoreBackup(backupId) { return apiRequest('admin', '/settings/backup/restore', { method: 'POST', body: { backupId } }); },
+
+    // Dashboard 扩展 (2026-07)
+    getHeatmap() { return apiRequest('admin', '/dashboard/heatmap'); },
+    getDashboardNodes() { return apiRequest('admin', '/dashboard/nodes'); },
+    getDeptDetail(deptId) { return apiRequest('admin', `/dashboard/dept-detail?deptId=${deptId}`); },
+
+    // Digital Twin
+    getDigitalTwinFloorPlan(floor) { return apiRequest('admin', `/digital-twin/floor-plan?floor=${floor}`); },
+    getDigitalTwinPatientPositions() { return apiRequest('admin', '/digital-twin/patient-positions'); },
+
+    // Tasks (2026-07)
+    getTasksKpi() { return apiRequest('admin', '/tasks/kpi'); },
+    getTasksList(params) {
+        const q = params ? '?' + new URLSearchParams(params).toString() : '';
+        return apiRequest('admin', '/tasks/list' + q);
+    },
+    getTaskDetail(taskId) { return apiRequest('admin', `/tasks/${taskId}`); },
+    adjustTask(taskId, data) { return apiRequest('admin', `/tasks/${taskId}/adjust`, { method: 'PUT', body: data }); },
+    updateTaskStatus(taskId, data) { return apiRequest('admin', `/tasks/${taskId}/status`, { method: 'PUT', body: data }); },
+    getTaskEventLog() { return apiRequest('admin', '/tasks/event-log'); },
+
+    // Queue (2026-07)
+    getQueueDetail(params) {
+        const q = params ? '?' + new URLSearchParams(params).toString() : '';
+        return apiRequest('admin', '/dispatch/queue-detail' + q);
+    },
+    callPatient(patientId) { return apiRequest('admin', `/queue/call/${patientId}`, { method: 'POST' }); },
+    exportQueueDetail(deptName) { return apiRequest('admin', `/dispatch/queue-detail/export?deptName=${encodeURIComponent(deptName)}`, { rawResponse: true }); },
 };
 
 // ===================== 业务端 API (患者客户端 / 子站终端) =====================
@@ -241,23 +286,25 @@ const businessApi = {
     // Auth
     terminalLogin(terminalCode, secretKey) {
         return apiRequest('business', '/auth/login', {
-            method: 'POST',
-            body: { terminalCode, secretKey },
-            headers: {},
+            method: 'POST', body: { terminalCode, secretKey }, headers: {},
         });
     },
     terminalRegister(terminalCode, terminalName, secretKey) {
         return apiRequest('business', '/auth/register', {
-            method: 'POST',
-            body: { terminalCode, terminalName, secretKey },
-            headers: {},
+            method: 'POST', body: { terminalCode, terminalName, secretKey }, headers: {},
+        });
+    },
+    /** 患者自助登录 (NFC ID + 手机号) */
+    patientLogin(nfcId, phone) {
+        return apiRequest('business', '/auth/patient-login', {
+            method: 'POST', body: { nfcId, phone }, headers: {},
         });
     },
 
     // Health
     healthCheck() { return apiRequest('business', '/health'); },
 
-    // Patient
+    // Patient CRUD (终端 Token)
     createPatient(data) { return apiRequest('business', '/patient', { method: 'POST', body: data }); },
     updatePatient(id, data) { return apiRequest('business', `/patient/${id}`, { method: 'PUT', body: data }); },
     deletePatient(id) { return apiRequest('business', `/patient/${id}`, { method: 'DELETE' }); },
@@ -267,6 +314,100 @@ const businessApi = {
         return apiRequest('business', '/patient/page' + q);
     },
     fetchPatientByRfid(rfid) { return apiRequest('business', '/patient/fetch-by-rfid', { method: 'POST', body: { rfid } }); },
+    /** 患者自查询个人信息 */
+    getPatientInfo() { return apiRequest('business', '/patient/info'); },
+    /** 患者更新个人信息 */
+    updatePatientInfo(data) { return apiRequest('business', '/patient/info', { method: 'PUT', body: data }); },
+    /** 按身份证号查询患者 */
+    queryPatientByIdCard(idCardNo) { return apiRequest('business', '/patient/query?idCardNo=' + encodeURIComponent(idCardNo)); },
+    /** 患者消息 */
+    getPatientMessages() { return apiRequest('business', '/patient/messages'); },
+
+    // Visit (患者 Token)
+    getVisitOverview(patientId) {
+        const q = patientId ? '?patientId=' + patientId : '';
+        return apiRequest('business', '/visit/overview' + q);
+    },
+    getVisitProgress(visitId) { return apiRequest('business', `/visit/progress?visitId=${visitId}`); },
+    getCurrentTask(visitId) { return apiRequest('business', `/visit/current-task?visitId=${visitId}`); },
+    getVisitTrace(visitId) { return apiRequest('business', `/visit/trace?visitId=${visitId}`); },
+    getVisitReminder(patientId) {
+        const q = patientId ? '?patientId=' + patientId : '';
+        return apiRequest('business', '/visit/reminder' + q);
+    },
+
+    // Queue (患者 Token)
+    getQueueStatus(dept, patientId) {
+        const params = new URLSearchParams();
+        if (dept) params.set('dept', dept);
+        if (patientId) params.set('patientId', patientId);
+        return apiRequest('business', '/queue/status?' + params.toString());
+    },
+    getQueueProgress(dept) { return apiRequest('business', `/queue/progress?dept=${encodeURIComponent(dept || '')}`); },
+
+    // Reports (患者 Token)
+    getReports(patientId) {
+        const q = patientId ? '?patientId=' + patientId : '';
+        return apiRequest('business', '/reports' + q);
+    },
+    getReportDetail(reportId) { return apiRequest('business', `/reports/${reportId}`); },
+    downloadReport(reportId) { return apiRequest('business', `/reports/${reportId}/download`, { rawResponse: true }); },
+    shareReport(reportId) { return apiRequest('business', `/reports/${reportId}/share`, { method: 'POST' }); },
+
+    // Rating (患者 Token)
+    submitRating(data) { return apiRequest('business', '/rating', { method: 'POST', body: data }); },
+
+    // Emergency (患者 Token)
+    sendEmergency(data) { return apiRequest('business', '/emergency', { method: 'POST', body: data }); },
+
+    // Chat (患者 Token)
+    sendChatMessage(data) { return apiRequest('business', '/chat/message', { method: 'POST', body: data }); },
+    getQuickQuestions() { return apiRequest('business', '/chat/quick-questions'); },
+
+    // Feedback
+    submitFeedback(data) { return apiRequest('business', '/feedback', { method: 'POST', body: data }); },
+
+    // Reminder Calendar
+    getReminderCalendar(patientId, year, month) {
+        const params = new URLSearchParams();
+        if (patientId) params.set('patientId', patientId);
+        if (year) params.set('year', year);
+        if (month) params.set('month', month);
+        return apiRequest('business', '/reminder/calendar?' + params.toString());
+    },
+
+    // NFC & Bracelet
+    nfcDetect(nfcId) { return apiRequest('business', '/nfc/detect', { method: 'POST', body: { nfcId } }); },
+    nfcBind(nfcId, patientId) { return apiRequest('business', '/nfc/bind', { method: 'POST', body: { nfcId, patientId } }); },
+    nfcUnbind(braceletId) { return apiRequest('business', `/nfc/unbind/${braceletId}`, { method: 'POST' }); },
+    returnBracelet(patientId) { return apiRequest('business', '/bracelet/return', { method: 'POST', body: { patientId } }); },
+    getBraceletSummary() { return apiRequest('business', '/bracelet/summary'); },
+    getBraceletRecords(params) {
+        const q = params ? '?' + new URLSearchParams(params).toString() : '';
+        return apiRequest('business', '/bracelet/records' + q);
+    },
+
+    // Navigation (患者 Token)
+    getNavigation(from, to) { return apiRequest('business', `/navigation?from=${from}&to=${to}`); },
+    startNavigation(data) { return apiRequest('business', '/navigation/start', { method: 'POST', body: data }); },
+    arriveNavigation(data) { return apiRequest('business', '/navigation/arrive', { method: 'POST', body: data }); },
+    getFloorPlan(floor) { return apiRequest('business', `/map/floor-plan?floor=${floor}`); },
+
+    // Family (患者 Token)
+    getFamilyList(patientId) {
+        const q = patientId ? '?patientId=' + patientId : '';
+        return apiRequest('business', '/family/list' + q);
+    },
+    bindFamily(data) { return apiRequest('business', '/family/bind', { method: 'POST', body: data }); },
+    unbindFamily(familyId) { return apiRequest('business', `/family/unbind/${familyId}`, { method: 'DELETE' }); },
+    getFamilyStatus(familyId) { return apiRequest('business', `/family/status?familyId=${familyId}`); },
+
+    // Substation (终端 Token)
+    substationDetect(stationId, nfcId) { return apiRequest('business', '/substation/detect', { method: 'POST', body: { stationId, nfcId } }); },
+    substationTask(patientId) { return apiRequest('business', `/substation/task/${patientId}`); },
+    substationVoice(stationId, voiceText) { return apiRequest('business', '/substation/voice', { method: 'POST', body: { stationId, voiceText } }); },
+    substationStatus(stationId) { return apiRequest('business', `/substation/status/${stationId}`); },
+    substationTaskConfirm(patientId, confirmed) { return apiRequest('business', '/substation/task/confirm', { method: 'PUT', body: { patientId, confirmed } }); },
 };
 
 // ===================== 登录对话框 =====================

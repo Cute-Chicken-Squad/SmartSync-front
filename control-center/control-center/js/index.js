@@ -218,11 +218,107 @@ async function loadSystemStatus() {
 }
 
 function renderSystemStatus(data) {
-    // 更新状态摘要
     const summaryEl = document.querySelector('.system-status-summary span:last-child');
     if (summaryEl && data.status) {
         summaryEl.textContent = data.status === 'UP' ? '系统运行正常' : '系统异常';
     }
+    // 更新边缘节点和设备状态 (API v2 新增字段)
+    if (data.edgeNodes) {
+        updateStatusItem('smartSubstations', data.edgeNodes.smartSubstations + '/' + (data.edgeNodes.smartSubstations || 0));
+        updateStatusItem('lightGuideNodes', data.edgeNodes.lightGuideNodes + '/20');
+        updateStatusItem('rfidSensorNodes', data.edgeNodes.rfidSensorNodes + '/6');
+        updateStatusItem('onlineRate', (data.edgeNodes.onlineRate || 0) + '%');
+    }
+    if (data.deviceStatus) {
+        updateStatusItem('nfcDevices', (data.deviceStatus.nfcDevices || 0) + '台');
+        updateStatusItem('voiceDevices', (data.deviceStatus.voiceDevices || 0) + '台');
+        updateStatusItem('pendingMaintenance', (data.deviceStatus.pendingMaintenance || 0) + '台');
+    }
+    if (data.terminalsOnline != null) {
+        updateStatusItem('onlineTerminals', data.terminalsOnline + '/' + (data.terminalsOnline + (data.terminalsOffline || 0)));
+    }
+}
+
+function updateStatusItem(key, value) {
+    const el = document.querySelector(`[data-status="${key}"] .item-value`);
+    if (el) el.textContent = value;
+}
+
+// ===================== 热力图 + 区域负载 =====================
+
+async function loadHeatmap() {
+    try {
+        const res = await adminApi.getHeatmap();
+        if (res.code === 200 && res.data && Array.isArray(res.data)) {
+            renderAreaGrid(res.data);
+        }
+    } catch (e) { /* 接口可能未实现 */ }
+}
+
+function renderAreaGrid(heatmapPoints) {
+    const container = document.querySelector('.area-grid');
+    if (!container) return;
+
+    // 聚合同名区域
+    const groups = {};
+    heatmapPoints.forEach(p => {
+        const name = p.name || '未知区域';
+        if (!groups[name]) groups[name] = { name, count: 0, intensity: 0, n: 0, type: p.type };
+        groups[name].count += (p.intensity || 0) * 3;
+        groups[name].intensity += p.intensity || 0;
+        groups[name].n++;
+    });
+
+    const areas = Object.values(groups).map(g => ({
+        name: g.name,
+        count: Math.round(g.count),
+        intensity: Math.round(g.intensity / g.n * 100),
+        density: g.intensity / g.n > 0.7 ? 'high' : g.intensity / g.n > 0.4 ? 'medium' : 'low',
+    }));
+
+    // 按人数降序取前 6 个
+    areas.sort((a, b) => b.count - a.count);
+    const top = areas.slice(0, 6);
+
+    container.innerHTML = top.map(a => `
+        <div class="area-item">
+            <div class="area-header">
+                <span class="area-name">${escHtml(a.name)}</span>
+                <span class="area-density ${a.density}">${a.density === 'high' ? '拥挤' : a.density === 'medium' ? '中等' : '畅通'}</span>
+            </div>
+            <div class="area-info">当前人数: ${a.count}人</div>
+            <div class="area-bar">
+                <div class="area-fill" style="width:${Math.min(a.intensity, 100)}%; background:${a.density === 'high' ? '#ff6b6b' : a.density === 'medium' ? '#fcc419' : '#51cf66'};"></div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// ===================== 数字孪生预览 =====================
+
+async function loadTwinPreviewStats() {
+    try {
+        const [nodesRes, positionsRes] = await Promise.allSettled([
+            adminApi.getDashboardNodes(),
+            adminApi.getDigitalTwinPatientPositions(),
+        ]);
+
+        if (nodesRes.value?.code === 200 && nodesRes.value.data) {
+            const nodes = Array.isArray(nodesRes.value.data) ? nodesRes.value.data : [];
+            const onlineNodes = nodes.filter(n => n.status === 'online').length;
+            updateTwinStat('previewSubOnline', onlineNodes + '/' + nodes.length);
+        }
+
+        if (positionsRes.value?.code === 200 && positionsRes.value.data) {
+            const positions = Array.isArray(positionsRes.value.data) ? positionsRes.value.data : [];
+            updateTwinStat('previewPatientCount', positions.length);
+        }
+    } catch (e) { /* 接口可能未实现 */ }
+}
+
+function updateTwinStat(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
 }
 
 // ===================== 警报处理 =====================
@@ -269,6 +365,8 @@ function refreshAllData() {
     loadSourceDistribution();
     loadTrafficTrend();
     loadSystemStatus();
+    loadHeatmap();
+    loadTwinPreviewStats();
 }
 
 function refreshData() {

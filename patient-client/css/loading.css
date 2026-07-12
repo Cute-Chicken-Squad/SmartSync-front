@@ -1,0 +1,252 @@
+/* ===================== 骨架屏 ===================== */
+
+@keyframes sk-shimmer {
+    0% { background-position: -200px 0; }
+    100% { background-position: calc(200px + 100%) 0; }
+}
+
+.skeleton-loading {
+    pointer-events: none;
+    user-select: none;
+}
+
+.sk-line {
+    height: 14px;
+    border-radius: 7px;
+    background: linear-gradient(90deg, #E8ECF1 25%, #F0F2F5 50%, #E8ECF1 75%);
+    background-size: 200px 100%;
+    animation: sk-shimmer 1.5s infinite;
+    margin-bottom: 10px;
+}
+.sk-line.w30 { width: 30%; }
+.sk-line.w40 { width: 40%; }
+.sk-line.w50 { width: 50%; }
+.sk-line.w60 { width: 60%; }
+.sk-line.w70 { width: 70%; }
+.sk-line.w80 { width: 80%; }
+.sk-line.w90 { width: 90%; }
+.sk-line-lg { height: 24px; border-radius: 12px; }
+
+.sk-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 8px rgba(27,58,75,0.05);
+    border: 1px solid #EDF0F4;
+}
+
+.sk-list-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 0;
+    border-bottom: 1px solid #EDF0F4;
+}
+.sk-avatar {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(90deg, #E8ECF1 25%, #F0F2F5 50%, #E8ECF1 75%);
+    background-size: 200px 100%;
+    animation: sk-shimmer 1.5s infinite;
+    flex-shrink: 0;
+}
+.sk-lines { flex: 1; }
+.sk-lines .sk-line { margin-bottom: 6px; }
+
+.sk-progress {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 16px 0;
+}
+.sk-step {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(90deg, #E8ECF1 25%, #F0F2F5 50%, #E8ECF1 75%);
+    background-size: 200px 100%;
+    animation: sk-shimmer 1.5s infinite;
+    flex-shrink: 0;
+}
+.sk-progress .sk-line { flex: 1; margin-bottom: 0; }
+
+.sk-text { padding: 10px 0; }
+
+.sk-kpi {
+    background: #fff;
+    border-radius: 16px;
+    padding: 16px;
+    text-align: center;
+    border: 1px solid #EDF0F4;
+}
+.sk-kpi .sk-line { margin: 0 auto 8px; }
+
+/* ===================== 空状态 ===================== */
+
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+    text-align: center;
+}
+.empty-icon {
+    margin-bottom: 16px;
+    opacity: 0.5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.empty-title {
+    font-size: 15px;
+    color: #555A60;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+.empty-desc {
+    font-size: 13px;
+    color: #959BA3;
+    max-width: 240px;
+    line-height: 1.5;
+}
+
+/* ===================== 错误状态 ===================== */
+
+.error-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+    text-align: center;
+}
+.error-icon { font-size: 40px; margin-bottom: 12px; }
+.error-title { font-size: 15px; color: #D94848; margin-bottom: 12px; font-weight: 500; }
+
+/* ===================== Toast ===================== */
+
+.toast {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-120px);
+    padding: 12px 24px;
+    border-radius: 24px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 99999;
+    pointer-events: none;
+    white-space: nowrap;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+.toast-info { background: #1B3A4B; }
+.toast-success { background: #2D9F5C; }
+.toast-error { background: #D94848; }
+.toast-warning { background: #E8992D; color: #1A1D21; }
+
+/* ===================== 下拉刷新 ===================== */
+
+.pull-indicator {
+    text-align: center;
+    font-size: 13px;
+    color: #959BA3;
+    height: 0;
+    overflow: hidden;
+    transition: height 0.25s ease;
+}
+.pull-indicator span { display: block; padding: 12px 0; }
+
+/* ===================== 页面过渡 ===================== */
+
+.page {
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+/* ===================== 离线提示 ===================== */
+
+.offline-bar {
+    display: none;
+    background: #E8992D;
+    color: #fff;
+    text-align: center;
+    padding: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+}
+body.is-offline .offline-bar { display: block; }
+
+/* ===================== 网络状态 ===================== */
+
+.network-dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #2D9F5C;
+    margin-right: 4px;
+    transition: background 0.3s;
+}
+body.is-offline .network-dot { background: #D94848; }
+
+/* ===================== 触摸涟漪 ===================== */
+
+.touch-ripple {
+    position: fixed;
+    width: 40px; height: 40px;
+    margin-left: -20px; margin-top: -20px;
+    border-radius: 50%;
+    background: rgba(59, 130, 192, 0.2);
+    transform: scale(0);
+    animation: ripple-effect 0.6s ease-out;
+    pointer-events: none;
+    z-index: 99998;
+}
+@keyframes ripple-effect {
+    to { transform: scale(4); opacity: 0; }
+}
+
+/* ===================== 数字滚动 ===================== */
+
+.num-animate {
+    display: inline-block;
+    transition: color 0.3s;
+}
+.num-animate.updating { color: #3B82C0; }
+.num-animate.positive { color: #2D9F5C; }
+.num-animate.negative { color: #D94848; }
+
+/* ===================== 语音按钮动画 ===================== */
+
+.voice-btn.active::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    border: 2px solid #3B82C0;
+    animation: voice-pulse 1.5s ease-out infinite;
+}
+@keyframes voice-pulse {
+    0% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(1.8); opacity: 0; }
+}
+
+/* ===================== 手势提示 ===================== */
+
+.swipe-hint {
+    position: absolute;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 12px;
+    color: #959BA3;
+    animation: hint-bounce 2s ease-in-out infinite;
+    pointer-events: none;
+}
+@keyframes hint-bounce {
+    0%, 100% { transform: translateX(-50%) translateY(0); opacity: 0.6; }
+    50% { transform: translateX(-50%) translateY(-8px); opacity: 1; }
+}

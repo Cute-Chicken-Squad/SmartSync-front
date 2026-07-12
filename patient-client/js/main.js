@@ -56,88 +56,77 @@ const appData = {
     _loaded: false,
 };
 
-// ===================== 数据加载（从后端 API） =====================
+// ===================== 数据加载（从后端 API + 缓存） =====================
 
 /**
- * 尝试从后端加载患者数据，失败时使用默认值
+ * 尝试从后端加载患者数据，失败时使用缓存/默认值
  * 调用时机: NFC 手环感应后，或页面首次加载
+ * 策略: 缓存(新鲜) → API → 缓存(过期) → mock
  */
 async function loadPatientData(rfid) {
-    // Step 1: 确保终端 Token
-    const token = await ensureTerminalToken();
+    Toast.info('正在加载就诊数据...');
 
-    // Step 2: 按 RFID 查询患者
-    let patient = null;
+    // Step 1: NFC 检测 + 患者登录
+    let nfcInfo = null;
     if (rfid) {
-        patient = await PatientService.fetchByRfid(rfid);
-    }
-
-    // Step 3: 如果已有 session 中的 patientId，直接查
-    if (!patient && PatientSession.getPatientId()) {
-        patient = await PatientService.getPatient(PatientSession.getPatientId());
-    }
-
-    // Step 4: 尝试从已有患者列表获取（模拟场景）
-    if (!patient && token) {
-        const pageRes = await PatientService.queryPatients({ current: 1, size: 1 });
-        if (pageRes?.records?.length > 0) {
-            patient = pageRes.records[0];
-            PatientSession.set({ patientId: patient.id, patientName: patient.name });
+        nfcInfo = await PatientService.nfcDetect(rfid);
+        if (nfcInfo) {
+            PatientSession.set({ patientId: nfcInfo.patientId, patientName: nfcInfo.patientName, nfcId: rfid });
         }
     }
 
-    // Step 5: 如果有患者数据，填充 appData
-    if (patient) {
-        appData._source = 'api';
-        appData.patient = {
-            name: patient.name || appData.patient.name,
-            id: patient.id ? ('#' + String(patient.id).slice(-4)) : appData.patient.id,
-            gender: patient.gender === 1 ? '男' : patient.gender === 2 ? '女' : appData.patient.gender,
-            age: patient.age || appData.patient.age,
-        };
+    // Step 2: 患者登录 (NFC ID)
+    const session = PatientSession.get();
+    if (session?.nfcId) {
+        const info = await PatientService.getInfo().catch(() => null);
+        const phone = info?.phone || '13900000001';
+        await patientLogin(session.nfcId, phone);
+    }
 
-        // 尝试加载就诊数据
+    // Step 3: 获取就诊概览 → 填充 appData
+    if (PatientSession.getPatientId()) {
         const overview = await PatientService.getVisitOverview();
         if (overview) {
             appData._source = 'api';
+            appData.patient = {
+                name: overview.patient?.name || appData.patient.name,
+                id: overview.patient?.id ? ('#' + String(overview.patient.id).slice(-4)) : appData.patient.id,
+                gender: overview.patient?.gender === 1 ? '男' : overview.patient?.gender === 2 ? '女' : appData.patient.gender,
+                age: overview.patient?.age || appData.patient.age,
+            };
+            const a = overview.appointment || {};
             appData.appointment = {
-                department: overview.department || appData.appointment.department,
-                floor: overview.floor || appData.appointment.floor,
-                time: overview.appointmentTime || appData.appointment.time,
-                waitTime: overview.waitMinutes ? (overview.waitMinutes + '分钟') : appData.appointment.waitTime,
-            };
-            if (overview.progress) {
-                appData.progress = overview.progress;
-            }
-        }
-
-        // 尝试加载报告列表
-        const reports = await PatientService.getReports();
-        if (reports && reports.length > 0) {
-            appData._source = 'api';
-            appData.reports = reports.map(r => ({
-                title: r.title,
-                date: r.date,
-                status: r.status || 'completed',
-                preview: r.preview || '',
-            }));
-        }
-
-        // 尝试加载复诊提醒
-        const reminder = await PatientService.getReminder();
-        if (reminder) {
-            appData._source = 'api';
-            appData.reminder = {
-                date: reminder.nextDate || appData.reminder.date,
-                department: reminder.department || appData.reminder.department,
-                doctor: reminder.doctorName || appData.reminder.doctor,
-                room: reminder.room || appData.reminder.room,
+                department: a.department || appData.appointment.department,
+                floor: a.floor ? (a.floor + 'F') : appData.appointment.floor,
+                time: a.time ? a.time.substring(11, 16) : appData.appointment.time,
+                waitTime: a.waitMinutes ? (a.waitMinutes + '分钟') : appData.appointment.waitTime,
             };
         }
 
-        console.log('[Patient] 数据加载完成 (来源: ' + appData._source + ')');
+        // 并行加载
+        const [progress, reports, reminder, queue] = await Promise.allSettled([
+            PatientService.getVisitProgress(),
+            PatientService.getReports(),
+            PatientService.getReminder(),
+            PatientService.getQueueStatus(appData.appointment.department),
+        ]);
+
+        if (progress.value) appData.progress = progress.value.steps || appData.progress;
+        if (reports.value?.length) {
+            appData.reports = reports.value.map(r => ({ title: r.title, date: r.date, status: r.status || 'completed', preview: r.preview || '' }));
+        }
+        if (reminder.value) {
+            appData.reminder = { date: reminder.value.nextDate || appData.reminder.date, department: reminder.value.department || appData.reminder.department, doctor: reminder.value.doctorName || appData.reminder.doctor, room: reminder.value.room || appData.reminder.room };
+        }
+        if (queue.value) {
+            appData.queue = { number: queue.value.queueNumber, waitTime: queue.value.waitMinutes ? (queue.value.waitMinutes + '分钟') : appData.queue.waitTime, aheadCount: queue.value.aheadCount, avgDuration: queue.value.avgDuration ? (queue.value.avgDuration + '分钟') : appData.queue.avgDuration };
+        }
+
+        Logger.log('数据加载完成 (API)');
+        Toast.success('数据加载完成');
     } else {
-        console.log('[Patient] 未找到患者数据，使用默认值');
+        Logger.log('API 数据加载失败，使用默认值');
+        Toast.info('使用演示数据');
     }
 
     appData._loaded = true;
@@ -175,20 +164,28 @@ function refreshAllBindings() {
 function showPage(pageId) {
     if (currentPageId === pageId) return;
 
+    // 使用过渡动画（如果 pages.js 已加载）
+    if (typeof navigateTo === 'function') {
+        navigateTo(pageId);
+        // 刷新数据绑定（在过渡完成后）
+        setTimeout(() => {
+            if (appData._loaded) { bindData(); renderProgress(); renderReports(); }
+        }, 300);
+        return;
+    }
+
+    // 降级：无动画切换
     document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
     const targetPage = document.getElementById(pageId);
     if (targetPage) {
         targetPage.classList.add('active');
         currentPageId = pageId;
         updateNavigation(pageId);
+        // 控制底部导航显隐
+        if (typeof toggleBottomNav === 'function') toggleBottomNav(pageId);
+        if (typeof updateNavHighlight === 'function') updateNavHighlight(pageId);
         window.scrollTo({ top: 0, behavior: 'smooth' });
-
-        // 页面切换时刷新数据绑定
-        if (appData._loaded) {
-            bindData();
-            renderProgress();
-            renderReports();
-        }
+        if (appData._loaded) { bindData(); renderProgress(); renderReports(); }
     } else {
         showToast('页面加载失败');
     }
@@ -213,11 +210,17 @@ function updateNavigation(pageId) {
 }
 
 function showToast(message, type = 'info', duration = 3000) {
+    // 使用新的 Toast 组件
+    if (typeof Toast !== 'undefined') {
+        Toast.show(message, type, duration);
+        return;
+    }
+    // 降级：使用旧 DOM 方式
     const toast = document.getElementById('toast');
     if (!toast) return;
     const toastMessage = toast.querySelector('.toast-message');
     if (toastMessage) toastMessage.textContent = message;
-    toast.className = 'toast ' + type;
+    toast.className = 'toast toast-' + type;
     toast.classList.add('show');
     setTimeout(() => toast.classList.remove('show'), duration);
 }
@@ -438,15 +441,31 @@ function callFamily() {
 
 // ===================== 身份选择 =====================
 
-function selectPatient() {
+async function selectPatient() {
     localStorage.setItem('identity', 'patient');
+    Device.haptic('light');
     showToast('正在识别患者身份...', 'info');
-    // 尝试自动加载数据
-    loadPatientData().then(() => {
-        setTimeout(() => showPage('overview'), 500);
-    }).catch(() => {
-        setTimeout(() => showPage('overview'), 1000);
-    });
+
+    // 在 overview 页面显示骨架屏
+    Skeleton.show('.patient-card', 'kpi');
+    Skeleton.show('.appointment-card', 'card');
+    Skeleton.show('.progress-timeline', 'progress');
+
+    await loadPatientData().catch(() => {});
+    Skeleton.hide('.patient-card');
+    Skeleton.hide('.appointment-card');
+    Skeleton.hide('.progress-timeline');
+    refreshAllBindings();
+
+    // 使用 navigateTo（处理底部导航显隐）或降级 showPage
+    if (typeof navigateTo === 'function') {
+        await navigateTo('overview');
+    } else if (typeof PageTransition !== 'undefined') {
+        await PageTransition.go('overview');
+        if (typeof toggleBottomNav === 'function') toggleBottomNav('overview');
+    } else {
+        showPage('overview');
+    }
 }
 
 function selectFamily() {
@@ -472,7 +491,19 @@ function bindData() {
 }
 
 function getNestedValue(obj, path) {
-    return path.split('.').reduce((current, key) => current?.[key], obj);
+    // 防止原型链访问
+    if (!path || typeof path !== 'string') return undefined;
+    const keys = path.split('.');
+    if (keys.some(k => k === '__proto__' || k === 'constructor' || k === 'prototype')) return undefined;
+    return keys.reduce((current, key) => current?.[key], obj);
+}
+
+/** HTML 转义，防止 XSS */
+function escHtml(str) {
+    if (str == null) return '';
+    const div = document.createElement('div');
+    div.textContent = String(str);
+    return div.innerHTML;
 }
 
 // ===================== 进度渲染 =====================
@@ -481,12 +512,12 @@ function renderProgress() {
     const container = document.querySelector('.progress-timeline');
     if (!container) return;
     container.innerHTML = appData.progress.map((item, index) => `
-        <div class="progress-item ${item.status}">
+        <div class="progress-item ${escHtml(item.status)}">
             <div class="progress-dot"></div>
             ${index < appData.progress.length - 1 ? '<div class="progress-line"></div>' : ''}
             <div class="progress-info">
-                <div class="progress-title">${item.title}</div>
-                <div class="progress-time">${item.time}</div>
+                <div class="progress-title">${escHtml(item.title)}</div>
+                <div class="progress-time">${escHtml(item.time)}</div>
             </div>
         </div>
     `).join('');
@@ -500,11 +531,11 @@ function renderReports() {
     container.innerHTML = appData.reports.map(report => `
         <div class="report-item" onclick="showPage('report-detail')">
             <div class="report-header">
-                <div class="report-title">${report.title}</div>
-                <div class="report-status ${report.status}">${report.status === 'normal' ? '正常' : '已完成'}</div>
+                <div class="report-title">${escHtml(report.title)}</div>
+                <div class="report-status ${escHtml(report.status)}">${report.status === 'normal' ? '正常' : '已完成'}</div>
             </div>
-            <div class="report-meta">${report.date}</div>
-            <div class="report-preview">${report.preview || ''}</div>
+            <div class="report-meta">${escHtml(report.date)}</div>
+            <div class="report-preview">${escHtml(report.preview || '')}</div>
             <div class="report-actions">
                 <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); downloadReport()">下载</button>
                 <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); shareReport()">分享</button>
@@ -558,31 +589,34 @@ function createTouchFeedback(x, y) {
 
 document.addEventListener('DOMContentLoaded', () => {
     hideLoading();
+
+    // 恢复模式设置
+    if (localStorage.getItem('elderMode') === 'true') document.body.classList.add('elder-mode');
+    if (localStorage.getItem('highContrast') === 'true') document.body.classList.add('high-contrast');
+    window.voiceEnabled = localStorage.getItem('voiceEnabled') !== 'false';
+
+    // 初始化页面管理（底部导航、空状态标记）
+    if (typeof setupPages === 'function') setupPages();
+
     bindData();
     renderProgress();
     renderReports();
     initTouchFeedback();
 
-    // 恢复模式设置
-    if (localStorage.getItem('elderMode') === 'true') {
-        document.body.classList.add('elder-mode');
-    }
-    if (localStorage.getItem('highContrast') === 'true') {
-        document.body.classList.add('high-contrast');
-    }
-    window.voiceEnabled = localStorage.getItem('voiceEnabled') !== 'false';
-
     // 如果之前有 session，尝试加载真实数据
     if (PatientSession.isLoggedIn()) {
-        console.log('[Patient] 检测到已有会话，加载患者数据...');
-        loadPatientData().catch(() => console.log('[Patient] 数据加载失败，使用默认值'));
+        Logger.log('检测到已有会话，加载患者数据...');
+        loadPatientData().catch(() => Logger.log('数据加载失败，使用默认值'));
     }
+
+    // 标记已初始化
+    document.body.classList.add('app-initialized');
 });
 
 window.addEventListener('error', (event) => {
-    console.error('Global error:', event.error);
+    Logger.error('Global error:', event.error);
     hideLoading();
-    showToast('应用程序发生错误，请刷新重试');
+    Toast.show('应用程序发生错误，请刷新重试', 'error', 5000);
 });
 
 // ===================== 全局导出 =====================

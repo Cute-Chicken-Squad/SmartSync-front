@@ -1,9 +1,8 @@
 /**
  * 智环引诊 - 患者客户端 API 服务
  *
- * 使用业务端 API (8080/10138)，需要终端 Token
- * 鉴权流程: NFC手环感应 → RFID查询患者 → 获取患者信息
- * 未实现的接口自动降级为本地 mock 数据
+ * 鉴权: POST /api/auth/patient-login (NFC ID + 手机号)
+ * 所有患者侧 API 已由后端实现 (2026-07)
  */
 
 // ===================== 患者会话管理 =====================
@@ -11,54 +10,67 @@
 const PatientSession = {
     _key: 'smartsync_patient_session',
 
-    get() {
-        try { return JSON.parse(localStorage.getItem(this._key)); } catch { return null; }
-    },
+    get() { try { return JSON.parse(localStorage.getItem(this._key)); } catch { return null; } },
     set(data) {
-        const session = { ...this.get(), ...data, _updated: Date.now() };
-        localStorage.setItem(this._key, JSON.stringify(session));
-        return session;
+        const s = { ...this.get(), ...data, _updated: Date.now() };
+        localStorage.setItem(this._key, JSON.stringify(s));
+        return s;
     },
     clear() { localStorage.removeItem(this._key); },
 
     getPatientId() { return this.get()?.patientId; },
     getVisitId() { return this.get()?.visitId; },
-    getRfid() { return this.get()?.rfid; },
-    isLoggedIn() { return !!(this.get()?.patientId); },
+    getNfcId() { return this.get()?.nfcId; },
+    isLoggedIn() { return !!(TokenStore.getPatientToken()); },
 };
 
-// ===================== 终端认证（客户端需要终端 Token 才能调业务 API） =====================
+// ===================== 患者认证 =====================
 
-async function ensureTerminalToken() {
-    let token = TokenStore.getBizToken();
-    if (token) return token;
+async function ensurePatientToken() {
+    // 已有有效患者 Token
+    if (TokenStore.getPatientToken()) return TokenStore.getPatientToken();
 
-    // 尝试用默认终端凭证登录
-    try {
-        const res = await businessApi.terminalLogin('CLIENT-H5', 'client-h5-pass');
-        if (res.code === 200 && res.data?.token) {
-            TokenStore.setBizToken(res.data.token);
-            TokenStore.setBizUser({ terminalCode: res.data.terminalCode });
-            console.log('[Patient] 终端自动登录成功');
-            return res.data.token;
-        }
-    } catch (e) {
-        console.warn('[Patient] 终端自动登录失败:', e.message);
+    // 尝试用存储的 NFC + 手机号登录
+    const session = PatientSession.get();
+    if (session?.nfcId && session?.phone) {
+        try {
+            const res = await businessApi.patientLogin(session.nfcId, session.phone);
+            if (res.code === 200 && res.data?.token) {
+                TokenStore.setPatientToken(res.data.token);
+                TokenStore.setPatientUser({
+                    patientId: res.data.patientId,
+                    patientName: res.data.patientName,
+                });
+                PatientSession.set({ patientId: res.data.patientId, patientName: res.data.patientName });
+                Logger.log('患者自动登录成功:', res.data.patientName);
+                return res.data.token;
+            }
+        } catch (e) { Logger.warn('患者自动登录失败:', e.message); }
+    } else {
+        Logger.log('无患者会话，使用演示模式');
     }
+    return null;
+}
 
-    // 尝试注册 + 登录
+/** 患者登录 (NFC手环 + 手机号) */
+async function patientLogin(nfcId, phone) {
     try {
-        await businessApi.terminalRegister('CLIENT-H5', 'H5患者客户端', 'client-h5-pass');
-        const res = await businessApi.terminalLogin('CLIENT-H5', 'client-h5-pass');
+        const res = await businessApi.patientLogin(nfcId, phone);
         if (res.code === 200 && res.data?.token) {
-            TokenStore.setBizToken(res.data.token);
-            console.log('[Patient] 终端注册并登录成功');
-            return res.data.token;
+            TokenStore.setPatientToken(res.data.token);
+            TokenStore.setPatientUser({
+                patientId: res.data.patientId,
+                patientName: res.data.patientName,
+            });
+            PatientSession.set({
+                patientId: res.data.patientId,
+                patientName: res.data.patientName,
+                nfcId, phone,
+            });
+            Logger.log('患者登录成功:', res.data.patientName);
+            return res.data;
         }
-    } catch (e) {
-        console.warn('[Patient] 终端注册失败:', e.message);
-    }
-
+    } catch (e) { Logger.warn('患者登录失败:', e.message); }
     return null;
 }
 
@@ -66,163 +78,263 @@ async function ensureTerminalToken() {
 
 const PatientService = {
 
+    // ---- 认证 ----
+    login: patientLogin,
+    ensureToken: ensurePatientToken,
+
     // ---- 患者信息 ----
-
-    /** 按 RFID 查询患者（NFC 手环感应） */
-    async fetchByRfid(rfid) {
-        await ensureTerminalToken();
-        try {
-            const res = await businessApi.fetchPatientByRfid(rfid);
-            if (res.code === 200 && res.data) {
-                PatientSession.set({
-                    patientId: res.data.id,
-                    rfid: rfid,
-                    patientName: res.data.name,
-                });
-                return res.data;
-            }
-        } catch (e) { console.warn('[Patient] RFID查询失败:', e.message); }
-        return null;
+    async getInfo() {
+        try { const r = await businessApi.getPatientInfo(); return r.code === 200 ? r.data : null; }
+        catch (e) { return null; }
+    },
+    async updateInfo(data) {
+        try { const r = await businessApi.updatePatientInfo(data); return r.code === 200; }
+        catch (e) { return false; }
+    },
+    async getMessages() {
+        try { const r = await businessApi.getPatientMessages(); return r.code === 200 ? r.data : []; }
+        catch (e) { return []; }
     },
 
-    /** 按患者 ID 获取详情 */
-    async getPatient(patientId) {
-        await ensureTerminalToken();
-        try {
-            const res = await businessApi.getPatient(patientId || PatientSession.getPatientId());
-            if (res.code === 200 && res.data) return res.data;
-        } catch (e) { console.warn('[Patient] 患者信息获取失败:', e.message); }
+    // ---- 就诊 ----
+    async getVisitOverview(patientId) {
+        const res = await businessApi.getVisitOverview(patientId);
+        if (res.code === 200 && res.data) {
+            PatientSession.set({ visitId: res.data.visitId });
+            return res.data;
+        }
         return null;
     },
-
-    /** 分页查询患者 */
-    async queryPatients(params) {
-        await ensureTerminalToken();
-        try {
-            const res = await businessApi.getPatientPage(params);
-            if (res.code === 200 && res.data) return res.data;
-        } catch (e) { console.warn('[Patient] 患者查询失败:', e.message); }
-        return null;
-    },
-
-    /** 创建患者档案 */
-    async createPatient(data) {
-        await ensureTerminalToken();
-        try {
-            const res = await businessApi.createPatient(data);
-            if (res.code === 200) {
-                PatientSession.set({ patientId: res.data, patientName: data.name });
-                return res.data;
-            }
-        } catch (e) { console.warn('[Patient] 创建患者失败:', e.message); }
-        return null;
-    },
-
-    // ---- 就诊数据（部分接口后端暂未实现，降级为 mock） ----
-
-    /** 获取就诊概览 */
-    async getVisitOverview(visitId) {
-        try {
-            const res = await apiRequest('business', `/visit/overview?visitId=${visitId || PatientSession.getVisitId() || 1}`, { method: 'GET' });
-            if (res.code === 200 && res.data) return res.data;
-        } catch (e) { /* 接口未实现，使用 mock */ }
-        return null;
-    },
-
-    /** 获取就诊进度 */
     async getVisitProgress(visitId) {
-        try {
-            const res = await apiRequest('business', `/visit/progress?visitId=${visitId || PatientSession.getVisitId() || 1}`, { method: 'GET' });
-            if (res.code === 200 && res.data) return res.data;
-        } catch (e) { /* 接口未实现 */ }
-        return null;
+        const res = await businessApi.getVisitProgress(visitId || PatientSession.getVisitId());
+        return res.code === 200 ? res.data : null;
     },
-
-    /** 获取排队状态 */
-    async getQueueStatus(dept, patientId) {
-        try {
-            const res = await apiRequest('business', `/queue/status?dept=${encodeURIComponent(dept || '')}&patientId=${patientId || PatientSession.getPatientId() || ''}`, { method: 'GET' });
-            if (res.code === 200 && res.data) return res.data;
-        } catch (e) { /* 接口未实现 */ }
-        return null;
+    async getCurrentTask(visitId) {
+        const res = await businessApi.getCurrentTask(visitId || PatientSession.getVisitId());
+        return res.code === 200 ? res.data : null;
     },
-
-    /** 获取复诊提醒 */
+    async getVisitTrace(visitId) {
+        const res = await businessApi.getVisitTrace(visitId || PatientSession.getVisitId());
+        return res.code === 200 ? res.data : null;
+    },
     async getReminder(patientId) {
-        try {
-            const res = await apiRequest('business', `/visit/reminder?patientId=${patientId || PatientSession.getPatientId() || ''}`, { method: 'GET' });
-            if (res.code === 200 && res.data) return res.data;
-        } catch (e) { /* 接口未实现 */ }
-        return null;
+        const res = await businessApi.getVisitReminder(patientId || PatientSession.getPatientId());
+        return res.code === 200 ? res.data : null;
+    },
+    async getReminderCalendar(year, month) {
+        const res = await businessApi.getReminderCalendar(PatientSession.getPatientId(), year, month);
+        return res.code === 200 ? res.data : null;
+    },
+
+    // ---- 排队 ----
+    async getQueueStatus(dept, patientId) {
+        const res = await businessApi.getQueueStatus(dept, patientId || PatientSession.getPatientId());
+        return res.code === 200 ? res.data : null;
+    },
+    async getQueueProgress(dept) {
+        const res = await businessApi.getQueueProgress(dept);
+        return res.code === 200 ? res.data : [];
     },
 
     // ---- 报告 ----
-
-    /** 获取报告列表 */
     async getReports(patientId) {
-        try {
-            const res = await apiRequest('business', `/reports?patientId=${patientId || PatientSession.getPatientId() || ''}`, { method: 'GET' });
-            if (res.code === 200 && res.data) return res.data;
-        } catch (e) { /* 接口未实现 */ }
-        return null;
+        const res = await businessApi.getReports(patientId || PatientSession.getPatientId());
+        return res.code === 200 ? res.data : [];
+    },
+    async getReportDetail(reportId) {
+        const res = await businessApi.getReportDetail(reportId);
+        return res.code === 200 ? res.data : null;
+    },
+    async downloadReport(reportId) {
+        return businessApi.downloadReport(reportId);
+    },
+    async shareReport(reportId) {
+        const res = await businessApi.shareReport(reportId);
+        return res.code === 200 ? res.data : null;
     },
 
     // ---- 操作 ----
-
-    /** 提交满意度评价 */
     async submitRating(data) {
-        try {
-            const res = await apiRequest('business', '/rating', { method: 'POST', body: data });
-            if (res.code === 200) return true;
-        } catch (e) { console.warn('[Patient] 评价提交失败:', e.message); }
-        return false;
+        const res = await businessApi.submitRating({
+            visitId: data.visitId || PatientSession.getVisitId(),
+            patientId: data.patientId || PatientSession.getPatientId(),
+            score: data.score,
+            comment: data.comment || '',
+            tags: data.tags || [],
+        });
+        return res.code === 200;
     },
-
-    /** 发起紧急求助 */
     async sendEmergency(data) {
-        try {
-            const res = await apiRequest('business', '/emergency', { method: 'POST', body: data });
-            if (res.code === 200) return res.data;
-        } catch (e) { console.warn('[Patient] 紧急求助失败:', e.message); }
-        return null;
+        const res = await businessApi.sendEmergency({
+            patientId: data.patientId || PatientSession.getPatientId(),
+            location: data.location || '',
+            type: data.type || 'emergency',
+            description: data.description || '',
+        });
+        return res.code === 200 ? res.data : null;
     },
 
-    /** 归还手环 */
+    // ---- 聊天 ----
+    async sendChatMessage(message) {
+        const res = await businessApi.sendChatMessage({
+            patientId: PatientSession.getPatientId(),
+            message,
+            type: 'text',
+        });
+        return res.code === 200 ? res.data : null;
+    },
+    async getQuickQuestions() {
+        try { const r = await businessApi.getQuickQuestions(); return r.code === 200 ? r.data : []; }
+        catch (e) { return QUICK_QUESTIONS; }
+    },
+
+    // ---- 反馈 ----
+    async submitFeedback(data) {
+        const res = await businessApi.submitFeedback({
+            patientId: PatientSession.getPatientId(),
+            type: data.type || '',
+            content: data.content || '',
+            contact: data.contact || '',
+        });
+        return res.code === 200;
+    },
+
+    // ---- NFC & 手环 ----
+    async nfcDetect(nfcId) {
+        const res = await businessApi.nfcDetect(nfcId);
+        return res.code === 200 ? res.data : null;
+    },
+    async nfcBind(nfcId, patientId) {
+        const res = await businessApi.nfcBind(nfcId, patientId || PatientSession.getPatientId());
+        return res.code === 200 ? res.data : null;
+    },
+    async nfcUnbind(braceletId) {
+        try { return (await businessApi.nfcUnbind(braceletId)).code === 200; }
+        catch (e) { return false; }
+    },
     async returnBracelet(patientId) {
-        try {
-            const res = await apiRequest('business', '/bracelet/return', { method: 'POST', body: { patientId: patientId || PatientSession.getPatientId() } });
-            if (res.code === 200) return true;
-        } catch (e) { /* 接口未实现 */ }
-        return false;
+        const res = await businessApi.returnBracelet(patientId || PatientSession.getPatientId());
+        return res.code === 200;
     },
 
-    /** 绑定手环 */
-    async bindBracelet(rfidUuid, patientId) {
-        await ensureTerminalToken();
-        try {
-            const res = await apiRequest('business', '/patient/bind-bracelet', { method: 'POST', body: { patientId: patientId || PatientSession.getPatientId(), rfidUuid } });
-            if (res.code === 200) return res.data;
-        } catch (e) { console.warn('[Patient] 绑定失败:', e.message); }
-        return null;
+    // ---- 导航 ----
+    async getNavigation(from, to) {
+        const res = await businessApi.getNavigation(from, to);
+        return res.code === 200 ? res.data : null;
+    },
+    async startNavigation(visitId, fromNodeId, toNodeId) {
+        const res = await businessApi.startNavigation({ visitId: visitId || PatientSession.getVisitId(), fromNodeId, toNodeId });
+        return res.code === 200 ? res.data : null;
+    },
+    async arriveNavigation(visitId, nodeId) {
+        const res = await businessApi.arriveNavigation({ visitId: visitId || PatientSession.getVisitId(), nodeId });
+        return res.code === 200;
+    },
+    async getFloorPlan(floor) {
+        const res = await businessApi.getFloorPlan(floor);
+        return res.code === 200 ? res.data : null;
     },
 
-    /** 获取家属列表 */
+    // ---- 家属 ----
     async getFamilyList(patientId) {
-        try {
-            const res = await apiRequest('business', `/family/list?patientId=${patientId || PatientSession.getPatientId() || ''}`, { method: 'GET' });
-            if (res.code === 200 && res.data) return res.data;
-        } catch (e) { /* 接口未实现 */ }
-        return [];
+        const res = await businessApi.getFamilyList(patientId || PatientSession.getPatientId());
+        return res.code === 200 ? res.data : [];
     },
-
-    /** 绑定家属 */
     async bindFamily(data) {
-        try {
-            const res = await apiRequest('business', '/family/bind', { method: 'POST', body: data });
-            if (res.code === 200) return true;
-        } catch (e) { /* 接口未实现 */ }
-        return false;
+        const res = await businessApi.bindFamily({
+            patientId: PatientSession.getPatientId(),
+            familyPatientId: data.familyPatientId,
+            braceletId: data.braceletId,
+            relationship: data.relationship || '家属',
+        });
+        return res.code === 200;
+    },
+    async unbindFamily(familyId) {
+        try { return (await businessApi.unbindFamily(familyId)).code === 200; }
+        catch (e) { return false; }
+    },
+    async getFamilyStatus(familyId) {
+        const res = await businessApi.getFamilyStatus(familyId);
+        return res.code === 200 ? res.data : null;
     },
 };
 
-console.log('[智环引诊] 患者客户端 API 服务已加载');
+// ===================== SSE 实时推送 =====================
+
+const SSEClient = {
+    _connections: {},
+
+    /**
+     * 订阅 SSE 频道
+     * @param {string} channel - 频道名 (visit-progress, queue, etc.)
+     * @param {string} url - SSE URL 路径
+     * @param {function} onData - 数据回调
+     * @param {'patient'|'admin'|'biz'} tokenType
+     */
+    subscribe(channel, url, onData, tokenType = 'patient') {
+        this.unsubscribe(channel);
+
+        const token = tokenType === 'patient' ? TokenStore.getPatientToken()
+            : tokenType === 'admin' ? TokenStore.getAdminToken()
+            : TokenStore.getBizToken();
+
+        if (!token) { Logger.warn('SSE: 无 Token，跳过订阅', channel); return; }
+
+        const base = tokenType === 'admin' ? API_CONFIG.admin.baseURL.replace('/admin/api', '')
+            : API_CONFIG.business.baseURL.replace('/api', '');
+        const fullUrl = base + url;
+
+        const controller = new AbortController();
+        this._connections[channel] = controller;
+
+        Logger.log('SSE 订阅:', channel);
+
+        fetch(fullUrl, {
+            headers: { Accept: 'text/event-stream', Authorization: `Bearer ${token}` },
+            signal: controller.signal,
+        }).then(async (response) => {
+            if (!response.ok) { Logger.warn('SSE 连接失败:', response.status); return; }
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop() || '';
+                for (const line of lines) {
+                    if (line.startsWith('data:')) {
+                        try { onData(JSON.parse(line.slice(5).trim())); }
+                        catch (e) { /* skip malformed */ }
+                    }
+                }
+            }
+        }).catch(e => { if (e.name !== 'AbortError') Logger.warn('SSE 错误:', channel, e.message); });
+    },
+
+    unsubscribe(channel) {
+        if (this._connections[channel]) {
+            this._connections[channel].abort();
+            delete this._connections[channel];
+        }
+    },
+
+    /** 订阅就诊进度 */
+    watchProgress(visitId, onData) {
+        this.subscribe('visit-progress', `/ws/visit/progress/${visitId}`, onData, 'patient');
+    },
+    /** 订阅排队状态 */
+    watchQueue(dept, onData) {
+        this.subscribe('queue-' + dept, `/ws/queue/${encodeURIComponent(dept)}`, onData, 'patient');
+    },
+};
+
+// 全局导出
+window.PatientSession = PatientSession;
+window.ensurePatientToken = ensurePatientToken;
+window.patientLogin = patientLogin;
+window.PatientService = PatientService;
+window.SSEClient = SSEClient;
+
+Logger.log('患者 API 服务已加载 (患者 Token 模式)');

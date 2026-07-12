@@ -1,17 +1,17 @@
 .progress-bar {
     width: 100%;
     height: 8px;
-    background: var(--border-light);
+    background: var(--bg-tertiary);
     border-radius: 4px;
     overflow: hidden;
-    margin: 15px 0;
+    margin: 16px 0;
 }
 
 .progress-fill {
     height: 100%;
-    background: var(--primary-color);
+    background: var(--accent-color);
     border-radius: 4px;
-    transition: width 0.5s ease;
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .step-indicator {
@@ -35,16 +35,18 @@
     font-size: 14px;
     font-weight: 600;
     margin: 0 auto 5px;
+    transition: all 0.3s ease;
 }
 
 .step-icon.active {
-    background: var(--primary-color);
-    color: var(--bg-primary);
+    background: var(--accent-color);
+    color: #FFFFFF;
+    box-shadow: 0 2px 8px rgba(59,130,192,0.3);
 }
 
 .step-icon.completed {
-    background: #34a853;
-    color: var(--bg-primary);
+    background: var(--success-color);
+    color: #FFFFFF;
 }
 
 .step-icon.pending {
@@ -58,16 +60,18 @@
     color: var(--text-secondary);
 }
 
+/* 时间线 */
 .timeline-card {
     background: var(--bg-primary);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     padding: 16px;
+    border: 1px solid var(--border-light);
 }
 
 .timeline-item {
     display: flex;
     gap: 12px;
-    padding: 12px 0;
+    padding: 14px 0;
     position: relative;
 }
 
@@ -81,27 +85,21 @@
     background: var(--border-color);
 }
 
-.timeline-item:last-child::before {
-    display: none;
-}
+.timeline-item:last-child::before { display: none; }
 
 .timeline-marker {
     width: 22px;
     height: 22px;
     border-radius: 50%;
-    background: var(--primary-color);
+    background: var(--accent-color);
     flex-shrink: 0;
     position: relative;
     z-index: 1;
 }
 
-.timeline-marker.completed {
-    background: var(--success-color);
-}
+.timeline-marker.completed { background: var(--success-color); }
 
-.timeline-content {
-    flex: 1;
-}
+.timeline-content { flex: 1; }
 
 .timeline-time {
     font-size: 12px;
