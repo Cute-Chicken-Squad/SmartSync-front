@@ -19,38 +19,45 @@
         var H = this.container.clientHeight || 300;
 
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color(0xf0f2f5);
+        this.scene.background = new THREE.Color(0xf8fafc);
 
         var cw = this.cadBounds.maxX - this.cadBounds.minX;
         var cx = (this.cadBounds.minX + this.cadBounds.maxX) / 2;
         var cy = (this.cadBounds.minY + this.cadBounds.maxY) / 2;
 
-        this.camera = new THREE.PerspectiveCamera(38, W / H, 1, 800);
-        this.camera.position.set(cx, cy - cw * 0.38, cw * 0.75);
+        this.camera = new THREE.PerspectiveCamera(35, W / H, 1, 800);
+        this.camera.position.set(cx, cy - cw * 0.22, cw * 0.55);
         this.camera.lookAt(cx, cy, 0);
 
-        this.renderer = new THREE.WebGLRenderer({ antialias: true });
+        this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         this.renderer.setSize(W, H);
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         this.renderer.shadowMap.enabled = true;
+        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        this.renderer.toneMappingExposure = 1.05;
+        this.renderer.toneMappingExposure = 1.1;
+        this.renderer.outputColorSpace = THREE.SRGBColorSpace;
         this.container.appendChild(this.renderer.domElement);
 
-        this.scene.add(new THREE.AmbientLight(0x8899aa, 0.8));
-        this.scene.add(new THREE.HemisphereLight(0xddeeff, 0x8899aa, 0.6));
-        var sun = new THREE.DirectionalLight(0xffffff, 1.2);
-        sun.position.set(60, -25, 80);
+        this.scene.add(new THREE.AmbientLight(0xaabbcc, 0.9));
+        this.scene.add(new THREE.HemisphereLight(0xeef4ff, 0xaabbcc, 0.7));
+        var sun = new THREE.DirectionalLight(0xffffff, 1.5);
+        sun.position.set(cx + 50, cy - 40, 100);
         sun.castShadow = true;
-        sun.shadow.mapSize.width = 1024;
-        sun.shadow.mapSize.height = 1024;
+        sun.shadow.mapSize.width = 2048;
+        sun.shadow.mapSize.height = 2048;
         sun.shadow.camera.near = 0.5;
-        sun.shadow.camera.far = 300;
-        sun.shadow.camera.left = -120;
-        sun.shadow.camera.right = 120;
-        sun.shadow.camera.top = 100;
-        sun.shadow.camera.bottom = -100;
+        sun.shadow.camera.far = 400;
+        sun.shadow.camera.left = -100;
+        sun.shadow.camera.right = 100;
+        sun.shadow.camera.top = 80;
+        sun.shadow.camera.bottom = -80;
+        sun.shadow.bias = -0.0005;
         this.scene.add(sun);
+
+        var fillLight = new THREE.DirectionalLight(0x60a5fa, 0.4);
+        fillLight.position.set(cx - 30, cy + 20, 50);
+        this.scene.add(fillLight);
 
         this.load();
         var self = this;
@@ -60,10 +67,16 @@
 
     TwinPreview.prototype.load = function () {
         var self = this;
-        fetch('../../digital-twin/JJI54559656769/cad_twin_data.json')
+        fetch('/digital-twin/data/hospital_f1/cad_twin_data.json')
             .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
             .then(function (data) {
-                self.cadBounds = data.metadata.bounds;
+                var bounds = data.metadata.bounds;
+                self.cadBounds = {
+                    minX: bounds.min_x,
+                    maxX: bounds.max_x,
+                    minY: bounds.min_y,
+                    maxY: bounds.max_y
+                };
                 self.build(data);
             })
             .catch(function () {
@@ -83,10 +96,12 @@
                 { name: '妇科', x: 115, y: 60, color: '#8b5cf6' },
                 { name: '药房', x: 115, y: 25, color: '#60a5fa' },
             ],
-            patients: Array.from({ length: 20 }, function (_, i) { return {
-                x: 10 + Math.random() * 120, y: 12 + Math.random() * 65,
-                typeColor: ['#60a5fa', '#34d399', '#f87171'][i % 3]
-            }; })
+            patients: Array.from({ length: 20 }, function (_, i) {
+                return {
+                    x: 10 + Math.random() * 120, y: 12 + Math.random() * 65,
+                    typeColor: ['#60a5fa', '#34d399', '#f87171'][i % 3]
+                };
+            })
         };
     };
 
@@ -96,67 +111,141 @@
         var cx = (this.cadBounds.minX + this.cadBounds.maxX) / 2;
         var cy = (this.cadBounds.minY + this.cadBounds.maxY) / 2;
 
-        // Floor
-        var floor = new THREE.Mesh(
-            new THREE.PlaneGeometry(cw, ch),
-            new THREE.MeshStandardMaterial({ color: 0xe8eaef, roughness: 0.7, metalness: 0.05 })
-        );
+        // Floor - gradient style
+        var floorGeo = new THREE.PlaneGeometry(cw, ch);
+        var floorMat = new THREE.MeshStandardMaterial({
+            color: 0xf1f5f9,
+            roughness: 0.8,
+            metalness: 0.02,
+            transparent: true,
+            opacity: 0.95
+        });
+        var floor = new THREE.Mesh(floorGeo, floorMat);
         floor.position.set(cx, cy, -0.15);
         floor.receiveShadow = true;
         this.scene.add(floor);
 
-        var grid = new THREE.PolarGridHelper(Math.max(cw, ch) / 2, 40, 20, 64, 0xccd0d8, 0xd8dce4);
-        grid.position.set(cx, cy, -0.04);
-        this.scene.add(grid);
+        // Floor edge border
+        var borderMat = new THREE.LineBasicMaterial({ color: 0x94a3b8, linewidth: 2 });
+        var borderGeo = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(this.cadBounds.minX, this.cadBounds.minY, 0),
+            new THREE.Vector3(this.cadBounds.maxX, this.cadBounds.minY, 0),
+            new THREE.Vector3(this.cadBounds.maxX, this.cadBounds.maxY, 0),
+            new THREE.Vector3(this.cadBounds.minX, this.cadBounds.maxY, 0),
+            new THREE.Vector3(this.cadBounds.minX, this.cadBounds.minY, 0)
+        ]);
+        var border = new THREE.Line(borderGeo, borderMat);
+        this.scene.add(border);
 
-        // Camera reposition
-        this.camera.position.set(cx, cy - cw * 0.38, cw * 0.75);
+        // Camera reposition - zoom in for better visual
+        this.camera.position.set(cx, cy - cw * 0.22, cw * 0.55);
         this.camera.lookAt(cx, cy, 0);
         this.camera.aspect = this.container.clientWidth / (this.container.clientHeight || 1);
         this.camera.updateProjectionMatrix();
 
         var self = this;
 
-        // Depts
-        (data.departments || []).forEach(function (d) {
-            var w = 4.5 + d.name.length * 0.25;
-            var dp = 3.6;
-            var mesh = new THREE.Mesh(
-                new THREE.BoxGeometry(w, dp, 3.8),
-                new THREE.MeshStandardMaterial({ color: d.color || '#4b7bec', roughness: 0.35, metalness: 0.10, transparent: true, opacity: 0.55 })
+        // Depts - improved visual style
+        var colorPalette = ['#3b82f6', '#06b6d4', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#6366f1', '#0ea5e9'];
+        (data.departments || []).forEach(function (d, index) {
+            var w = Math.max(3.2, 2.5 + d.name.length * 0.18);
+            var dp = Math.max(2.2, 2.0 + d.name.length * 0.12);
+            var height = 4.8;
+            var color = d.color || colorPalette[index % colorPalette.length];
+
+            // Base layer
+            var baseMesh = new THREE.Mesh(
+                new THREE.BoxGeometry(w + 0.2, dp + 0.2, height * 0.8),
+                new THREE.MeshStandardMaterial({
+                    color: color,
+                    roughness: 0.6,
+                    metalness: 0.05,
+                    transparent: true,
+                    opacity: 0.35
+                })
             );
-            mesh.position.set(d.x, d.y, 1.9);
+            baseMesh.position.set(d.x, d.y, height * 0.4);
+            baseMesh.receiveShadow = true;
+            self.scene.add(baseMesh);
+
+            // Main body
+            var mesh = new THREE.Mesh(
+                new THREE.BoxGeometry(w, dp, height),
+                new THREE.MeshStandardMaterial({
+                    color: color,
+                    roughness: 0.3,
+                    metalness: 0.2,
+                    transparent: true,
+                    opacity: 0.55,
+                    emissive: color,
+                    emissiveIntensity: 0.15
+                })
+            );
+            mesh.position.set(d.x, d.y, height / 2);
             mesh.castShadow = true;
             mesh.receiveShadow = true;
             self.scene.add(mesh);
             self.deptMeshes.push(mesh);
 
+            // Top glossy layer with highlight
             var top = new THREE.Mesh(
-                new THREE.BoxGeometry(w + 0.24, dp + 0.24, 0.12),
-                new THREE.MeshStandardMaterial({ color: d.color || '#4b7bec', roughness: 0.15, metalness: 0.45, transparent: true, opacity: 0.72 })
+                new THREE.BoxGeometry(w + 0.12, dp + 0.12, 0.18),
+                new THREE.MeshStandardMaterial({
+                    color: 0xffffff,
+                    roughness: 0.05,
+                    metalness: 0.7,
+                    transparent: true,
+                    opacity: 0.9,
+                    emissive: color,
+                    emissiveIntensity: 0.4
+                })
             );
-            top.position.set(d.x, d.y, 3.85);
+            top.position.set(d.x, d.y, height + 0.09);
+            top.castShadow = true;
             self.scene.add(top);
             self.topAccents.push(top);
+
+            // Ambient glow
+            var glowGeo = new THREE.SphereGeometry(Math.max(w, dp) * 0.6, 20, 20);
+            var glowMat = new THREE.MeshBasicMaterial({
+                color: color,
+                transparent: true,
+                opacity: 0.06,
+                side: THREE.BackSide
+            });
+            var glow = new THREE.Mesh(glowGeo, glowMat);
+            glow.position.set(d.x, d.y, height / 2);
+            self.scene.add(glow);
         });
 
-        // Patients
-        (data.patients || []).slice(0, 20).forEach(function (pt) {
+        // Patients - improved visual style
+        (data.patients || []).slice(0, 25).forEach(function (pt) {
             var c = pt.typeColor || '#60a5fa';
+
+            // Outer ring with glow
             var ring = new THREE.Mesh(
-                new THREE.TorusGeometry(0.38, 0.03, 6, 20),
-                new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.35 })
+                new THREE.TorusGeometry(0.5, 0.04, 8, 24),
+                new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.25 })
             );
-            ring.position.set(pt.x, pt.y, 0.08);
+            ring.position.set(pt.x, pt.y, 0.1);
             ring.rotation.x = -Math.PI / 2;
             self.scene.add(ring);
 
+            // Core sphere with emissive glow
             var core = new THREE.Mesh(
-                new THREE.SphereGeometry(0.42, 14, 14),
-                new THREE.MeshStandardMaterial({ color: c, roughness: 0.22, metalness: 0.18, emissive: c, emissiveIntensity: 0.45 })
+                new THREE.SphereGeometry(0.35, 16, 16),
+                new THREE.MeshStandardMaterial({
+                    color: c,
+                    roughness: 0.15,
+                    metalness: 0.25,
+                    emissive: c,
+                    emissiveIntensity: 0.6,
+                    transparent: true,
+                    opacity: 0.95
+                })
             );
-            core.position.set(pt.x, pt.y, 4.0);
-            core.userData = { phase: Math.random() * Math.PI * 2, speed: 1.4 + Math.random() * 2, ring: ring };
+            core.position.set(pt.x, pt.y, 4.5);
+            core.userData = { phase: Math.random() * Math.PI * 2, speed: 1.2 + Math.random() * 1.5, ring: ring };
             self.patientMeshes.push(core);
             self.scene.add(core);
         });
@@ -182,18 +271,30 @@
         function frame() {
             requestAnimationFrame(frame);
             t0 += 0.016;
+
+            // Smooth patient pulsing animation
             self.patientMeshes.forEach(function (p) {
                 var ph = p.userData.phase, sp = p.userData.speed, ring = p.userData.ring;
-                p.scale.setScalar(1 + Math.sin(t0 * sp + ph) * 0.10);
-                p.material.emissiveIntensity = 0.38 + Math.sin(t0 * sp * 1.2 + ph) * 0.18;
+                var pulse = Math.sin(t0 * sp + ph);
+
+                p.scale.setScalar(1 + pulse * 0.08);
+                p.material.emissiveIntensity = 0.5 + pulse * 0.15;
+                p.position.z = 4.5 + pulse * 0.3;
+
                 if (ring) {
-                    ring.scale.setScalar(1 + Math.sin(t0 * sp * 0.9 + ph) * 0.08);
-                    ring.material.opacity = 0.25 + Math.sin(t0 * sp * 1.1 + ph) * 0.12;
+                    ring.scale.setScalar(1 + pulse * 0.06);
+                    ring.material.opacity = 0.2 + pulse * 0.1;
+                    ring.position.z = 0.1 + pulse * 0.05;
                 }
             });
+
+            // Gentle breathing animation for department tops
             self.topAccents.forEach(function (m, i) {
-                m.material.opacity = 0.66 + Math.sin(t0 * 1.2 + i * 0.7) * 0.06;
+                var glow = 0.8 + Math.sin(t0 * 1.5 + i * 0.5) * 0.08;
+                m.material.opacity = glow;
+                m.material.emissiveIntensity = 0.18 + Math.sin(t0 * 1.8 + i * 0.5) * 0.05;
             });
+
             self.renderer.render(self.scene, self.camera);
         }
         frame();

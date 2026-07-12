@@ -4,15 +4,16 @@
 }
 
 .task-icon {
-    font-size: 60px;
+    font-size: 48px;
     margin-bottom: 20px;
-    color: var(--primary-color);
+    color: var(--accent-color);
 }
 
 .task-title {
     font-size: 18px;
     font-weight: 600;
     margin-bottom: 10px;
+    color: var(--text-primary);
 }
 
 .task-desc {

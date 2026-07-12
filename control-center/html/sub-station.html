@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智环引诊 - 引导子站</title>
+    <link rel="stylesheet" href="../css/common.css">
+    <link rel="stylesheet" href="../css/sub-station.css">
+</head>
+
+<body>
+    <div class="sub-station-container">
+        <!-- 顶部状态栏 -->
+        <header class="sub-header">
+            <div class="sub-header-left">
+                <div class="station-id">子站 #<span id="stationId">A-08</span></div>
+                <div class="station-status">
+                    <span class="status-dot online"></span>
+                    <span>在线</span>
+                </div>
+            </div>
+            <div class="sub-header-right">
+                <div class="clock" id="clock">14:35:28</div>
+            </div>
+        </header>
+
+        <!-- 主体内容 -->
+        <main class="sub-main">
+            <!-- 待机状态：等待患者 -->
+            <div class="state-panel active" id="idlePanel">
+                <div class="idle-content">
+                    <div class="idle-icon">
+                        <div class="wave-circle"></div>
+                        <div class="wave-circle delay"></div>
+                        <div class="wave-circle delay2"></div>
+                        <div class="hand-ring"></div>
+                    </div>
+                    <h1 class="idle-title">请将手环靠近感应区</h1>
+                    <p class="idle-tip">系统将自动识别患者并显示任务</p>
+                </div>
+            </div>
+
+            <!-- 识别中状态 -->
+            <div class="state-panel" id="readingPanel">
+                <div class="loading-content">
+                    <div class="loader"></div>
+                    <h2>正在识别手环...</h2>
+                </div>
+            </div>
+
+            <!-- 任务展示状态 -->
+            <div class="state-panel" id="taskPanel">
+                <div class="task-content">
+                    <div class="patient-card">
+                        <div class="patient-avatar">
+                            <span id="patientAvatar">王</span>
+                        </div>
+                        <div class="patient-info">
+                            <div class="patient-name" id="patientName">王大爷</div>
+                            <div class="patient-masked-id" id="patientMaskedId">PAT-7A3B-9C2D</div>
+                        </div>
+                        <div class="patient-target">
+                            <span class="target-label">目标科室</span>
+                            <span class="target-value" id="patientDept">心内科</span>
+                        </div>
+                    </div>
+
+                    <div class="next-task" id="nextTask">
+                        <div class="task-direction">
+                            <div class="direction-icon">
+                                <svg width="48" height="48" viewBox="0 0 48 48">
+                                    <circle cx="24" cy="24" r="22" fill="none" stroke="#5c7cfa" stroke-width="2" />
+                                    <path d="M24 12 L24 30 M18 24 L24 30 L30 24" fill="none" stroke="#5c7cfa"
+                                        stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                                    <circle cx="24" cy="36" r="2" fill="#5c7cfa" />
+                                </svg>
+                            </div>
+                            <div class="direction-text">
+                                <div class="direction-label">下一站</div>
+                                <div class="direction-dest" id="directionDest">内科</div>
+                            </div>
+                        </div>
+                        <div class="task-arrow">
+                            <span class="arrow-line"></span>
+                            <span class="arrow-head">→</span>
+                        </div>
+                        <div class="task-eta">
+                            <div class="eta-label">预计步行</div>
+                            <div class="eta-value" id="etaValue">2 分钟</div>
+                        </div>
+                    </div>
+
+                    <!-- 语音输入区 -->
+                    <div class="voice-input-area">
+                        <div class="voice-hint" id="voiceHint">
+                            <span class="voice-icon"></span>
+                            <span>点击麦克风说话</span>
+                        </div>
+                        <button class="mic-btn" id="micBtn" onclick="toggleMic()">
+                            <span class="mic-icon"></span>
+                        </button>
+                        <div class="voice-wave hidden" id="voiceWave">
+                            <div class="vbar"></div>
+                            <div class="vbar"></div>
+                            <div class="vbar"></div>
+                            <div class="vbar"></div>
+                            <div class="vbar"></div>
+                            <div class="vbar"></div>
+                            <div class="vbar"></div>
+                        </div>
+                        <div class="recognized-text hidden" id="recognizedText"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 询问确认状态：是否前往洗手间 -->
+            <div class="state-panel" id="confirmPanel">
+                <div class="confirm-content">
+                    <div class="confirm-header">
+                        <div class="confirm-icon">
+                            <svg width="60" height="60" viewBox="0 0 60 60">
+                                <circle cx="30" cy="30" r="28" fill="#fff3bf" stroke="#fab005" stroke-width="2" />
+                                <text x="30" y="40" text-anchor="middle" font-size="32" fill="#fab005">?</text>
+                            </svg>
+                        </div>
+                        <h2 class="confirm-title" id="confirmTitle">是否确认前往洗手间？</h2>
+                        <p class="confirm-subtitle">请回答"确认"或"取消"</p>
+                    </div>
+                    <div class="confirm-buttons">
+                        <button class="confirm-btn cancel" onclick="respondConfirm(false)">
+                            <span class="btn-icon-cancel">×</span>
+                            <span>取消</span>
+                        </button>
+                        <button class="confirm-btn ok" onclick="respondConfirm(true)">
+                            <span class="btn-icon-ok">✓</span>
+                            <span>确认</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 任务已切换状态 -->
+            <div class="state-panel" id="updatedPanel">
+                <div class="updated-content">
+                    <div class="updated-icon">
+                        <svg width="80" height="80" viewBox="0 0 80 80">
+                            <circle cx="40" cy="40" r="38" fill="#d3f9d8" stroke="#40c057" stroke-width="2" />
+                            <path d="M25 40 L36 51 L56 28" fill="none" stroke="#40c057" stroke-width="4"
+                                stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </div>
+                    <h2 class="updated-title">任务已更新</h2>
+                    <div class="updated-task">
+                        <div class="updated-label">新的目标</div>
+                        <div class="updated-dest" id="updatedDest">洗手间</div>
+                    </div>
+                    <div class="updated-tip">请按新指示前进</div>
+                </div>
+            </div>
+        </main>
+
+        <!-- 底部信息栏 -->
+        <footer class="sub-footer">
+            <div class="footer-item">
+                <span class="footer-label">信号</span>
+                <span class="footer-value">强</span>
+            </div>
+            <div class="footer-item">
+                <span class="footer-label">电池</span>
+                <span class="footer-value">98%</span>
+            </div>
+            <div class="footer-item">
+                <span class="footer-label">位置</span>
+                <span class="footer-value" id="stationLocation">1F-电梯厅</span>
+            </div>
+        </footer>
+    </div>
+
+    <script src="../js/sub-station.js"></script>
+</body>
+
+</html>

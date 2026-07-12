@@ -1,0 +1,1108 @@
+/* 手环管理页面样式 */
+
+/* 汇总统计卡片 */
+.summary-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.summary-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    border: 1px solid #f1f3f5;
+    transition: all 0.25s ease;
+}
+
+.summary-card:hover {
+    box-shadow: 0 4px 16px rgba(92, 124, 250, 0.08);
+    transform: translateY(-2px);
+}
+
+.summary-info {
+    flex: 1;
+}
+
+.summary-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #212529;
+    line-height: 1.2;
+}
+
+.summary-label {
+    font-size: 13px;
+    color: #868e96;
+    margin-top: 4px;
+}
+
+/* 内容布局 */
+.content-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+
+/* 分配手环卡片 */
+.assign-card {
+    min-height: 500px;
+}
+
+.card-badge {
+    padding: 4px 12px;
+    background: #f8f9fa;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #868e96;
+}
+
+.card-badge.active {
+    background: #e7f5ff;
+    color: #5c7cfa;
+}
+
+/* 步骤指示器 */
+.steps-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 24px;
+    padding: 16px 0;
+}
+
+.step {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.step-number {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #f1f3f5;
+    color: #868e96;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.step.active .step-number {
+    background: #5c7cfa;
+    color: #fff;
+}
+
+.step.completed .step-number {
+    background: #51cf66;
+    color: #fff;
+}
+
+.step-text {
+    font-size: 13px;
+    color: #868e96;
+}
+
+.step.active .step-text {
+    color: #212529;
+    font-weight: 500;
+}
+
+.step-line {
+    width: 60px;
+    height: 2px;
+    background: #f1f3f5;
+    margin: 0 12px;
+}
+
+.step-line.active {
+    background: #5c7cfa;
+}
+
+/* 身份证读卡器提示 */
+.id-card-reader {
+    background: linear-gradient(135deg, #f0f7ff 0%, #e7f5ff 100%);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border: 1px dashed #5c7cfa;
+}
+
+.reader-hint {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.reader-hint p {
+    font-size: 14px;
+    color: #5c7cfa;
+    font-weight: 500;
+}
+
+.reader-icon {
+    width: 36px;
+    height: 36px;
+    background: #5c7cfa;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.reader-icon::after {
+    content: '';
+    width: 18px;
+    height: 14px;
+    background: #fff;
+    border-radius: 2px;
+}
+
+/* 表单样式 */
+.patient-form {
+    padding: 0;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-label {
+    font-size: 13px;
+    color: #495057;
+    margin-bottom: 6px;
+    font-weight: 500;
+}
+
+.form-label.required::after {
+    content: '*';
+    color: #ff6b6b;
+    margin-left: 4px;
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+    padding: 10px 12px;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #212529;
+    transition: all 0.2s ease;
+    background: #fff;
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+    border-color: #5c7cfa;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(92, 124, 250, 0.1);
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder {
+    color: #adb5bd;
+}
+
+.form-textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.form-hint {
+    font-size: 12px;
+    color: #868e96;
+    margin-top: 6px;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid #f1f3f5;
+}
+
+/* 绑定区域 */
+.bind-section {
+    padding: 0;
+}
+
+.patient-preview {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.patient-preview h5 {
+    font-size: 14px;
+    color: #495057;
+    margin-bottom: 12px;
+}
+
+.preview-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
+.preview-item {
+    display: flex;
+    align-items: center;
+}
+
+.preview-label {
+    font-size: 12px;
+    color: #868e96;
+    width: 70px;
+}
+
+.preview-value {
+    font-size: 13px;
+    color: #212529;
+    font-weight: 500;
+}
+
+/* 写卡器设备 */
+.writer-device {
+    margin-bottom: 20px;
+}
+
+.writer-device h5 {
+    font-size: 14px;
+    color: #495057;
+    margin-bottom: 12px;
+}
+
+.device-body {
+    background: #2d333b;
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.device-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.device-brand {
+    font-size: 11px;
+    color: #8b949e;
+    font-weight: 500;
+}
+
+.device-status {
+    font-size: 11px;
+    color: #8b949e;
+    padding: 2px 8px;
+    background: rgba(139, 148, 158, 0.2);
+    border-radius: 4px;
+}
+
+.device-status.scanning {
+    color: #ffd43b;
+    background: rgba(255, 212, 59, 0.2);
+}
+
+.device-status.success {
+    color: #51cf66;
+    background: rgba(81, 207, 102, 0.2);
+}
+
+.device-screen {
+    background: #0d1117;
+    border-radius: 8px;
+    padding: 24px;
+    text-align: center;
+    min-height: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+}
+
+.screen-content p {
+    font-size: 13px;
+    color: #8b949e;
+    margin-top: 12px;
+}
+
+.screen-waiting {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.screen-success {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.screen-success .success-text {
+    font-size: 16px;
+    color: #51cf66;
+    font-weight: 600;
+}
+
+.screen-success .bracelet-id-text {
+    font-size: 14px;
+    color: #c9d1d9;
+    font-family: monospace;
+}
+
+/* NFC图标 */
+.nfc-icon {
+    width: 60px;
+    height: 60px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.nfc-ring {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: 2px solid #5c7cfa;
+    position: absolute;
+    animation: nfc-pulse 1.5s ease-out infinite;
+    opacity: 0.6;
+}
+
+.nfc-ring.delay {
+    animation-delay: 0.5s;
+}
+
+.nfc-center {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #5c7cfa;
+    position: relative;
+    z-index: 1;
+}
+
+@keyframes nfc-pulse {
+    0% {
+        transform: scale(1);
+        opacity: 0.6;
+    }
+
+    100% {
+        transform: scale(1.6);
+        opacity: 0;
+    }
+}
+
+/* 声波动画 */
+.sound-wave {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 40px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.sound-wave.hidden {
+    display: none;
+}
+
+.wave-bar {
+    width: 4px;
+    background: #ffd43b;
+    border-radius: 2px;
+    animation: wave 0.4s ease-in-out;
+}
+
+.wave-bar:nth-child(1) {
+    height: 8px;
+    animation-delay: 0s;
+}
+
+.wave-bar:nth-child(2) {
+    height: 20px;
+    animation-delay: 0.05s;
+}
+
+.wave-bar:nth-child(3) {
+    height: 32px;
+    animation-delay: 0.1s;
+}
+
+.wave-bar:nth-child(4) {
+    height: 20px;
+    animation-delay: 0.15s;
+}
+
+.wave-bar:nth-child(5) {
+    height: 8px;
+    animation-delay: 0.2s;
+}
+
+@keyframes wave {
+
+    0%,
+    100% {
+        transform: scaleY(0.3);
+    }
+
+    50% {
+        transform: scaleY(1);
+    }
+}
+
+/* 设备灯光 */
+.device-light {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 12px;
+}
+
+.light-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #51cf66;
+    box-shadow: 0 0 6px #51cf66;
+    transition: all 0.3s ease;
+}
+
+.light-dot.scanning {
+    background: #ffd43b;
+    box-shadow: 0 0 6px #ffd43b;
+    animation: light-blink 0.5s ease infinite;
+}
+
+.light-dot.success {
+    background: #51cf66;
+    box-shadow: 0 0 8px #51cf66;
+}
+
+@keyframes light-blink {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.3;
+    }
+}
+
+.light-label {
+    font-size: 11px;
+    color: #8b949e;
+}
+
+/* 绑定操作按钮 */
+.bind-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+    justify-content: center;
+}
+
+.bind-actions .btn {
+    flex: 1;
+}
+
+.bind-actions .btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* 成功页面 */
+.success-section {
+    text-align: center;
+    padding: 20px 0;
+}
+
+/* 滴声提示 */
+.success-sound {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #fff9db 0%, #fff3bf 100%);
+    border: 1px solid #ffd43b;
+    border-radius: 20px;
+    padding: 6px 16px;
+    margin-bottom: 12px;
+    animation: sound-pop 0.3s ease;
+}
+
+@keyframes sound-pop {
+    0% {
+        transform: scale(0);
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+.sound-icon {
+    width: 20px;
+    height: 20px;
+    background: #ffd43b;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.sound-icon::after {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: #fff;
+    border-radius: 50%;
+    position: absolute;
+}
+
+.sound-icon::before {
+    content: '';
+    width: 16px;
+    height: 16px;
+    border: 2px solid #ffd43b;
+    border-radius: 50%;
+    position: absolute;
+    animation: sound-ring 0.6s ease-out;
+    opacity: 0;
+}
+
+@keyframes sound-ring {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(2);
+        opacity: 0;
+    }
+}
+
+.sound-text {
+    font-size: 14px;
+    color: #f59f00;
+    font-weight: 600;
+}
+
+.success-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #51cf66 0%, #40c057 100%);
+    color: #fff;
+    font-size: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 12px auto 16px;
+}
+
+.success-section h4 {
+    font-size: 18px;
+    color: #212529;
+    margin-bottom: 20px;
+}
+
+/* 结果卡/就诊凭证 */
+.result-card {
+    background: #fff;
+    border-radius: 12px;
+    border: 2px solid #e9ecef;
+    overflow: hidden;
+    margin-bottom: 24px;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.result-header {
+    background: linear-gradient(135deg, #5c7cfa 0%, #4c6ef5 100%);
+    color: #fff;
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.result-title {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.result-time {
+    font-size: 11px;
+    opacity: 0.9;
+}
+
+.result-body {
+    padding: 16px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.result-section {
+    text-align: left;
+}
+
+.result-section.full {
+    grid-column: 1 / -1;
+}
+
+.result-label {
+    font-size: 11px;
+    color: #868e96;
+    margin-bottom: 4px;
+}
+
+.result-value {
+    font-size: 14px;
+    color: #212529;
+    font-weight: 600;
+}
+
+.result-value.masked-id {
+    color: #5c7cfa;
+    font-family: monospace;
+    font-size: 16px;
+    letter-spacing: 1px;
+}
+
+.result-value.dept-tag {
+    display: inline-block;
+    background: #e7f5ff;
+    color: #5c7cfa;
+    padding: 2px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.result-value.bracelet-id {
+    font-family: monospace;
+    color: #495057;
+}
+
+/* 任务队列 */
+.task-queue {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.task-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border-left: 3px solid #dee2e6;
+}
+
+.task-item.active {
+    border-left-color: #5c7cfa;
+    background: #f0f7ff;
+}
+
+.task-item.completed {
+    border-left-color: #51cf66;
+    background: #f0fdf4;
+}
+
+.task-number {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #dee2e6;
+    color: #fff;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+}
+
+.task-item.active .task-number {
+    background: #5c7cfa;
+}
+
+.task-item.completed .task-number {
+    background: #51cf66;
+}
+
+.task-name {
+    font-size: 12px;
+    color: #495057;
+    flex: 1;
+}
+
+.task-location {
+    font-size: 11px;
+    color: #868e96;
+}
+
+/* 条形码 */
+.result-footer {
+    padding: 12px 16px;
+    border-top: 1px dashed #dee2e6;
+    background: #f8f9fa;
+}
+
+.barcode {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.barcode-lines {
+    display: flex;
+    gap: 1px;
+    height: 30px;
+    align-items: flex-end;
+}
+
+.barcode-line {
+    background: #212529;
+    border-radius: 1px;
+}
+
+.barcode-text {
+    font-size: 10px;
+    color: #868e96;
+    font-family: monospace;
+    letter-spacing: 2px;
+}
+
+.success-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+}
+
+/* 列表卡片 */
+.list-card {
+    min-height: 500px;
+}
+
+.search-box {
+    display: flex;
+    align-items: center;
+}
+
+.search-input {
+    padding: 8px 12px;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    font-size: 13px;
+    width: 180px;
+    transition: all 0.2s ease;
+}
+
+.search-input:focus {
+    border-color: #5c7cfa;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(92, 124, 250, 0.1);
+}
+
+.search-input::placeholder {
+    color: #adb5bd;
+}
+
+/* 分页 */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 0;
+    border-top: 1px solid #f1f3f5;
+}
+
+.page-btn {
+    padding: 6px 12px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    background: #fff;
+    color: #495057;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.page-btn:hover {
+    border-color: #5c7cfa;
+    color: #5c7cfa;
+}
+
+.page-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.page-info {
+    font-size: 12px;
+    color: #868e96;
+}
+
+/* 状态徽章 */
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.status-badge.active {
+    background: #e7f5ff;
+    color: #5c7cfa;
+}
+
+.status-badge.inactive {
+    background: #fff3bf;
+    color: #fab005;
+}
+
+/* 成功按钮 */
+.btn.success {
+    background: linear-gradient(135deg, #51cf66 0%, #40c057 100%);
+    color: #fff;
+    border: none;
+}
+
+.btn.success:hover {
+    background: linear-gradient(135deg, #40c057 0%, #37b24d 100%);
+}
+
+/* 列表中的脱敏ID */
+.masked-id-text {
+    color: #5c7cfa;
+    font-family: monospace;
+    font-weight: 600;
+    font-size: 12px;
+}
+
+/* 列表中的科室标签 */
+.dept-tag-sm {
+    display: inline-block;
+    background: #e7f5ff;
+    color: #5c7cfa;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+/* 列表中的手环ID */
+.bracelet-id-text {
+    font-family: monospace;
+    font-size: 12px;
+    color: #495057;
+}
+
+/* 弹窗样式 */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal.show {
+    display: flex;
+}
+
+.modal-content {
+    background: #fff;
+    border-radius: 12px;
+    width: 400px;
+    max-width: 90%;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+.modal-content.modal-lg {
+    width: 600px;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid #f1f3f5;
+}
+
+.modal-header h4 {
+    font-size: 16px;
+    color: #212529;
+}
+
+.modal-close {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #f1f3f5;
+    border: none;
+    font-size: 18px;
+    color: #868e96;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+    background: #dee2e6;
+    color: #495057;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.modal-body p {
+    font-size: 14px;
+    color: #495057;
+    margin-bottom: 8px;
+}
+
+.modal-hint {
+    font-size: 12px;
+    color: #868e96;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 20px;
+    border-top: 1px solid #f1f3f5;
+}
+
+/* 详情弹窗内容 */
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+.detail-section {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.detail-section h5 {
+    font-size: 13px;
+    color: #495057;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+}
+
+.detail-label {
+    font-size: 12px;
+    color: #868e96;
+}
+
+.detail-value {
+    font-size: 12px;
+    color: #212529;
+    font-weight: 500;
+}
+
+/* 隐藏类 */
+.hidden {
+    display: none !important;
+}
+
+/* 响应式 */
+@media (max-width: 1200px) {
+    .content-wrapper {
+        grid-template-columns: 1fr;
+    }
+
+    .summary-cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .summary-cards {
+        grid-template-columns: 1fr;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .preview-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .result-body {
+        grid-template-columns: 1fr;
+    }
+}

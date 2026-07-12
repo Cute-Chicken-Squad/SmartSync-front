@@ -23,12 +23,10 @@
                     <a href="index.html" class="nav-link active">首页</a>
                 </li>
                 <li class="nav-item">
-                    <a href="digital-twin-2.5d.html" class="nav-link">
-                        <span class="nav-icon"></span> 数字孪生
-                    </a>
+                    <a href="dispatch.html" class="nav-link">调度管理</a>
                 </li>
                 <li class="nav-item">
-                    <a href="dispatch.html" class="nav-link">调度管理</a>
+                    <a href="bracelet.html" class="nav-link">手环管理</a>
                 </li>
                 <li class="nav-item">
                     <a href="emergency.html" class="nav-link">紧急情况</a>
@@ -91,13 +89,12 @@
                             <span class="twin-status-badge" id="twinStatusBadge">
                                 <span class="status-dot online"></span>实时监控中
                             </span>
-                            <a href="digital-twin-2.5d.html" class="card-more">完整视图 ›</a>
+                            <a href="/digital-twin/index.html" class="card-more">完整视图 ›</a>
                         </div>
                     </div>
                     <div class="area-twin-preview" id="twinPreviewWrapper">
                         <div id="twinPreviewCanvas" class="twin-preview-canvas"
-                            onclick="window.location.href='digital-twin-2.5d.html'"
-                            title="点击进入完整2.5D数字孪生视图"></div>
+                            onclick="window.location.href='/digital-twin/index.html'" title="点击进入完整数字孪生视图"></div>
                         <div class="twin-overlay-info">
                             <div class="twin-stats">
                                 <span class="stat-item">
@@ -144,7 +141,7 @@
                 </div>
 
                 <!-- 科室数据卡片 -->
-                <div class="content-card">
+                <div class="content-card clickable-card" onclick="location.href='dept-load.html'">
                     <div class="card-header">
                         <h3 class="card-title">科室负载排行</h3>
                         <a href="dept-load.html" class="card-more">更多 ›</a>
@@ -204,7 +201,7 @@
                 </div>
 
                 <!-- 紧急求助卡片 -->
-                <div class="content-card emergency-card">
+                <div class="content-card emergency-card clickable-card" onclick="location.href='emergency.html'">
                     <div class="card-header">
                         <h3 class="card-title">紧急求助实时警报</h3>
                         <a href="emergency.html" class="card-more">更多 ›</a>
@@ -232,7 +229,8 @@
                 </div>
 
                 <!-- 患者来源分布卡片 -->
-                <div class="content-card source-distribution-card">
+                <div class="content-card source-distribution-card clickable-card"
+                    onclick="location.href='analytics.html'">
                     <div class="card-header">
                         <h3 class="card-title">患者来源分布</h3>
                     </div>
@@ -283,7 +281,7 @@
             </div>
 
             <!-- 流量趋势卡片 -->
-            <div class="trend-card">
+            <div class="trend-card clickable-card" onclick="location.href='analytics.html'">
                 <div class="card-header">
                     <h3 class="card-title">24小时流量趋势</h3>
                 </div>
@@ -337,19 +335,67 @@
                 </div>
                 <div class="system-status-grid">
                     <div class="status-section">
-                        <h4>子站终端</h4>
+                        <h4>边缘节点</h4>
                         <div class="status-items">
                             <div class="status-item">
-                                <span class="item-label">在线子站</span>
-                                <span class="item-value success">24/28</span>
+                                <span class="item-label">智能子站</span>
+                                <span class="item-value success">8/8</span>
                             </div>
                             <div class="status-item">
-                                <span class="item-label">离线子站</span>
-                                <span class="item-value danger">4</span>
+                                <span class="item-label">轻量导向节点</span>
+                                <span class="item-value success">18/20</span>
                             </div>
                             <div class="status-item">
-                                <span class="item-label">网络延迟</span>
-                                <span class="item-value normal">12ms</span>
+                                <span class="item-label">RFID感知节点</span>
+                                <span class="item-value success">6/6</span>
+                            </div>
+                            <div class="status-item">
+                                <span class="item-label">在线率</span>
+                                <span class="item-value normal">95%</span>
+                            </div>
+                        </div>
+                        <div class="edge-nodes-detail">
+                            <div class="edge-node-item">
+                                <div class="edge-node-icon smart">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" fill="none" stroke="#4285f4"
+                                            stroke-width="2" />
+                                        <rect x="7" y="7" width="10" height="6" fill="none" stroke="#4285f4"
+                                            stroke-width="1.5" />
+                                        <circle cx="9" cy="15" r="1.5" fill="#4285f4" />
+                                        <circle cx="12" cy="15" r="1.5" fill="#4285f4" />
+                                        <circle cx="15" cy="15" r="1.5" fill="#4285f4" />
+                                    </svg>
+                                </div>
+                                <div class="edge-node-info">
+                                    <span class="edge-node-name">智能子站</span>
+                                    <span class="edge-node-desc">NFC读卡器、地图展示、语音交互</span>
+                                </div>
+                            </div>
+                            <div class="edge-node-item">
+                                <div class="edge-node-icon light">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                        <path d="M12 3L20 9l-4 2v8l-8-4-4 4v-8l-4-2 8-6z" fill="none" stroke="#51cf66"
+                                            stroke-width="2" />
+                                        <circle cx="12" cy="9" r="2" fill="#51cf66" />
+                                    </svg>
+                                </div>
+                                <div class="edge-node-info">
+                                    <span class="edge-node-name">轻量导向节点</span>
+                                    <span class="edge-node-desc">NFC识别、路径引导</span>
+                                </div>
+                            </div>
+                            <div class="edge-node-item">
+                                <div class="edge-node-icon rfid">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                        <circle cx="12" cy="12" r="10" fill="none" stroke="#fcc419" stroke-width="2" />
+                                        <circle cx="12" cy="12" r="2" fill="#fcc419" />
+                                    </svg>
+                                </div>
+                                <div class="edge-node-info">
+                                    <span class="edge-node-name">RFID感知节点</span>
+                                    <span class="edge-node-desc">患者感知、状态监测</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -375,11 +421,11 @@
                         <div class="status-items">
                             <div class="status-item">
                                 <span class="item-label">NFC设备</span>
-                                <span class="item-value success">28台</span>
+                                <span class="item-value success">34台</span>
                             </div>
                             <div class="status-item">
                                 <span class="item-label">语音设备</span>
-                                <span class="item-value success">28台</span>
+                                <span class="item-value success">8台</span>
                             </div>
                             <div class="status-item">
                                 <span class="item-label">待维护</span>
@@ -392,6 +438,8 @@
         </main>
     </div>
 
+    <script src="/js/api-config.js"></script>
+    <script src="/js/mock-data.js"></script>
     <script src="../js/index.js"></script>
     <script src="../js/digital-twin-preview.js"></script>
 </body>

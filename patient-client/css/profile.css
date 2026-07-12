@@ -4,23 +4,25 @@
 }
 
 .profile-avatar {
-    width: 100px;
-    height: 100px;
+    width: 96px;
+    height: 96px;
     border-radius: 50%;
-    background: var(--primary-color);
-    color: var(--bg-primary);
+    background: var(--accent-color);
+    color: #FFFFFF;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 40px;
-    font-weight: bold;
+    font-size: 36px;
+    font-weight: 700;
     margin: 0 auto 20px;
+    box-shadow: 0 4px 16px rgba(59,130,192,0.2);
 }
 
 .profile-info h3 {
     font-size: 18px;
     font-weight: 600;
     margin-bottom: 5px;
+    color: var(--text-primary);
 }
 
 .profile-info p {
@@ -29,25 +31,23 @@
     margin-bottom: 30px;
 }
 
-.menu-list {
-    margin: 20px 0;
-}
+.menu-list { margin: 20px 0; }
 
 .menu-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 15px 0;
+    padding: 16px 0;
     border-bottom: 1px solid var(--border-light);
     cursor: pointer;
+    transition: var(--transition-fast);
 }
 
-.menu-item:last-child {
-    border-bottom: none;
-}
+.menu-item:last-child { border-bottom: none; }
 
 .menu-item span {
     font-size: 16px;
+    color: var(--text-primary);
 }
 
 .menu-item .arrow {
@@ -57,7 +57,7 @@
 
 .family-mode {
     background: var(--bg-secondary);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     padding: 20px;
     margin: 20px 0;
 }
@@ -67,48 +67,4 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
-}
-
-.toggle-switch {
-    position: relative;
-    width: 60px;
-    height: 34px;
-}
-
-.toggle-switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
-.toggle-slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: #ccc;
-    transition: .4s;
-    border-radius: 34px;
-}
-
-.toggle-slider:before {
-    position: absolute;
-    content: "";
-    height: 26px;
-    width: 26px;
-    left: 4px;
-    bottom: 4px;
-    background-color: white;
-    transition: .4s;
-    border-radius: 50%;
-}
-
-input:checked + .toggle-slider {
-    background-color: var(--primary-color);
-}
-
-input:checked + .toggle-slider:before {
-    transform: translateX(26px);
 }

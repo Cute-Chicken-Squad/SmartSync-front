@@ -1,51 +1,16 @@
 @media (max-width: 480px) {
-    .container {
-        max-width: 100%;
-    }
+    .container { max-width: 100%; }
+    .page { padding: 15px; }
+    .header { padding: 15px 0; }
+    .hero-section { padding: 30px 0; }
+    .hero-icon { width: 96px; height: 96px; }
+    .hero-icon img { width: 56px; height: 56px; }
+    .btn { padding: 14px; font-size: 15px; }
+    .appointment-card { padding: 12px; }
 
-    .page {
-        padding: 15px;
-    }
-
-    .header {
-        padding: 15px 0;
-    }
-
-    .hero-section {
-        padding: 30px 0;
-    }
-
-    .hero-icon {
-        width: 100px;
-        height: 100px;
-    }
-
-    .hero-icon img {
-        width: 60px;
-        height: 60px;
-    }
-
-    .btn {
-        padding: 14px;
-        font-size: 15px;
-    }
-
-    .appointment-card {
-        padding: 12px;
-    }
-
-    .step-indicator {
-        flex-wrap: wrap;
-    }
-
-    .step {
-        flex: 1;
-        min-width: 60px;
-    }
-
-    .step-label {
-        font-size: 10px;
-    }
+    .step-indicator { flex-wrap: wrap; }
+    .step { flex: 1; min-width: 60px; }
+    .step-label { font-size: 10px; }
 
     .voice-btn {
         width: 50px;
@@ -57,20 +22,8 @@
 }
 
 @media (max-width: 320px) {
-    .hero-title {
-        font-size: 18px;
-    }
-
-    .hero-desc {
-        font-size: 13px;
-    }
-
-    .btn {
-        padding: 12px;
-        font-size: 14px;
-    }
-
-    .appointment-info {
-        font-size: 13px;
-    }
+    .hero-title { font-size: 18px; }
+    .hero-desc { font-size: 13px; }
+    .btn { padding: 12px; font-size: 14px; }
+    .appointment-info { font-size: 13px; }
 }

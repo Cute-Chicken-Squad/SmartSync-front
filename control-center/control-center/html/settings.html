@@ -25,6 +25,9 @@
                     <a href="dispatch.html" class="nav-link">调度管理</a>
                 </li>
                 <li class="nav-item">
+                    <a href="bracelet.html" class="nav-link">手环管理</a>
+                </li>
+                <li class="nav-item">
                     <a href="emergency.html" class="nav-link">紧急情况</a>
                 </li>
                 <li class="nav-item">
@@ -123,66 +126,100 @@
                 </div>
             </div>
 
-            <!-- 子站管理 -->
+            <!-- 子站终端管理 -->
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">子站终端管理</h3>
-                    <button class="btn" style="font-size: 12px; padding: 6px 12px;" onclick="addSubstation()">添加子站</button>
+                    <button class="btn" style="font-size: 12px; padding: 6px 12px;"
+                        onclick="addSubstation()">添加子站</button>
                 </div>
                 <div class="table-container">
                     <table class="data-table">
                         <thead>
                             <tr>
-                                <th>子站名称</th>
-                                <th>位置</th>
+                                <th>终端编码</th>
+                                <th>终端名称</th>
                                 <th>状态</th>
-                                <th>最后在线</th>
+                                <th>创建时间</th>
                                 <th>操作</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <td>子站#01</td>
-                                <td>门诊楼A-1F</td>
-                                <td><span class="status-badge normal">在线</span></td>
-                                <td>刚刚</td>
+                                <td>SUB-1F-01</td>
+                                <td>1F-门诊大厅</td>
+                                <td><span class="badge badge-success">启用</span></td>
+                                <td>2026-04-01</td>
                                 <td>
-                                    <button class="btn-sm" onclick="restartServer('子站#01')">重启</button>
-                                    <button class="btn-sm" style="background: #f44336;" onclick="deleteServer('子站#01')">删除</button>
+                                    <button class="btn-sm" onclick="restartSubstation('SUB-1F-01')">重启</button>
+                                    <button class="btn-sm" onclick="editSubstation('SUB-1F-01')">编辑</button>
+                                    <button class="btn-sm btn-danger" onclick="deleteSubstation('SUB-1F-01')">删除</button>
                                 </td>
                             </tr>
                             <tr>
-                                <td>子站#02</td>
-                                <td>门诊楼A-2F</td>
-                                <td><span class="status-badge normal">在线</span></td>
-                                <td>刚刚</td>
+                                <td>SUB-1F-02</td>
+                                <td>1F-电梯厅</td>
+                                <td><span class="badge badge-success">启用</span></td>
+                                <td>2026-04-01</td>
                                 <td>
-                                    <button class="btn-sm" onclick="restartServer('子站#02')">重启</button>
-                                    <button class="btn-sm" style="background: #f44336;" onclick="deleteServer('子站#02')">删除</button>
+                                    <button class="btn-sm" onclick="restartSubstation('SUB-1F-02')">重启</button>
+                                    <button class="btn-sm" onclick="editSubstation('SUB-1F-02')">编辑</button>
+                                    <button class="btn-sm btn-danger" onclick="deleteSubstation('SUB-1F-02')">删除</button>
                                 </td>
                             </tr>
                             <tr>
-                                <td>子站#03</td>
-                                <td>门诊楼B-1F</td>
-                                <td><span class="status-badge danger">离线</span></td>
-                                <td>10分钟前</td>
+                                <td>SUB-2F-01</td>
+                                <td>2F-走廊北</td>
+                                <td><span class="badge badge-success">启用</span></td>
+                                <td>2026-04-02</td>
                                 <td>
-                                    <button class="btn-sm" onclick="restartServer('子站#03')">重启</button>
-                                    <button class="btn-sm" style="background: #f44336;" onclick="deleteServer('子站#03')">删除</button>
+                                    <button class="btn-sm" onclick="restartSubstation('SUB-2F-01')">重启</button>
+                                    <button class="btn-sm" onclick="editSubstation('SUB-2F-01')">编辑</button>
+                                    <button class="btn-sm btn-danger" onclick="deleteSubstation('SUB-2F-01')">删除</button>
                                 </td>
                             </tr>
                             <tr>
-                                <td>子站#04</td>
-                                <td>医技楼-1F</td>
-                                <td><span class="status-badge normal">在线</span></td>
-                                <td>刚刚</td>
+                                <td>SUB-2F-02</td>
+                                <td>2F-检验科</td>
+                                <td><span class="badge badge-success">启用</span></td>
+                                <td>2026-04-02</td>
                                 <td>
-                                    <button class="btn-sm" onclick="restartServer('子站#04')">重启</button>
-                                    <button class="btn-sm" style="background: #f44336;" onclick="deleteServer('子站#04')">删除</button>
+                                    <button class="btn-sm" onclick="restartSubstation('SUB-2F-02')">重启</button>
+                                    <button class="btn-sm" onclick="editSubstation('SUB-2F-02')">编辑</button>
+                                    <button class="btn-sm btn-danger" onclick="deleteSubstation('SUB-2F-02')">删除</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>SUB-3F-01</td>
+                                <td>3F-心内科</td>
+                                <td><span class="badge badge-warning">待审核</span></td>
+                                <td>2026-04-03</td>
+                                <td>
+                                    <button class="btn-sm" onclick="restartSubstation('SUB-3F-01')">重启</button>
+                                    <button class="btn-sm" onclick="editSubstation('SUB-3F-01')">编辑</button>
+                                    <button class="btn-sm btn-danger" onclick="deleteSubstation('SUB-3F-01')">删除</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>SUB-3F-02</td>
+                                <td>3F-影像科</td>
+                                <td><span class="badge badge-success">启用</span></td>
+                                <td>2026-04-03</td>
+                                <td>
+                                    <button class="btn-sm" onclick="restartSubstation('SUB-3F-02')">重启</button>
+                                    <button class="btn-sm" onclick="editSubstation('SUB-3F-02')">编辑</button>
+                                    <button class="btn-sm btn-danger" onclick="deleteSubstation('SUB-3F-02')">删除</button>
                                 </td>
                             </tr>
                         </tbody>
                     </table>
+                </div>
+                <div class="card-footer">
+                    <div class="summary-stats">
+                        <span>总计：6 台终端</span>
+                        <span>启用：5 台</span>
+                        <span>待审核：1 台</span>
+                    </div>
                 </div>
             </div>
 
@@ -212,6 +249,8 @@
         </main>
     </div>
 
+    <script src="/js/api-config.js"></script>
+    <script src="/js/mock-data.js"></script>
     <script src="../js/settings.js"></script>
 </body>
 

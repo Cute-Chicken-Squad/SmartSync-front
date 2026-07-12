@@ -52,3 +52,14 @@
     font-size: 11px;
     color: #adb5bd;
 }
+
+.trend-card.clickable-card {
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.trend-card.clickable-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(92, 124, 250, 0.12);
+    border-color: rgba(92, 124, 250, 0.2);
+}

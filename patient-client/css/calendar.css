@@ -1,6 +1,4 @@
-.calendar-section {
-    margin: 20px 0;
-}
+.calendar-section { margin: 20px 0; }
 
 .calendar-header {
     display: flex;
@@ -12,24 +10,30 @@
 .calendar-header h2 {
     font-size: 18px;
     font-weight: 600;
+    color: var(--text-primary);
 }
 
-.calendar-nav {
-    display: flex;
-    gap: 10px;
-}
+.calendar-nav { display: flex; gap: 10px; }
 
 .nav-btn {
     width: 32px;
     height: 32px;
     border: 1px solid var(--border-color);
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     background: var(--bg-primary);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     font-size: 16px;
+    color: var(--text-secondary);
+    transition: var(--transition-fast);
+}
+
+.nav-btn:hover {
+    background: var(--bg-secondary);
+    border-color: var(--accent-color);
+    color: var(--accent-color);
 }
 
 .calendar-grid {
@@ -46,23 +50,22 @@
     border-radius: var(--radius-sm);
     font-size: 14px;
     cursor: pointer;
-    transition: var(--transition-base);
+    transition: var(--transition-fast);
+    color: var(--text-primary);
 }
 
-.calendar-day:hover {
-    background: #f0f4f8;
-}
+.calendar-day:hover { background: var(--bg-tertiary); }
 
 .calendar-day.today {
-    background: var(--primary-color);
-    color: var(--bg-primary);
-    font-weight: 500;
+    background: var(--accent-color);
+    color: #FFFFFF;
+    font-weight: 600;
 }
 
 .calendar-day.has-appointment {
-    background: var(--bg-light);
-    color: var(--primary-color);
-    font-weight: 500;
+    background: var(--accent-light);
+    color: var(--accent-color);
+    font-weight: 600;
     position: relative;
 }
 
@@ -72,14 +75,14 @@
     bottom: 4px;
     width: 4px;
     height: 4px;
-    background: var(--primary-color);
+    background: var(--accent-color);
     border-radius: 50%;
 }
 
 .weekday {
     text-align: center;
     font-size: 12px;
-    color: var(--text-secondary);
+    color: var(--text-muted);
     font-weight: 500;
-    margin-bottom: 10px;
+    padding: 8px 0;
 }

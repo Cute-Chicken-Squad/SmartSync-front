@@ -5,9 +5,9 @@
 }
 
 html, body {
-    font-family: "PingFang SC", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, sans-serif;
-    background: #f5f7fa;
-    color: #333;
+    font-family: "SF Pro Display", "PingFang SC", -apple-system, BlinkMacSystemFont, "Microsoft YaHei", sans-serif;
+    background: #F7F8FA;
+    color: #1A1D21;
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -15,30 +15,41 @@ html, body {
 }
 
 :root {
-    --primary-color: #4A90E2;
-    --primary-light: #E8F4FD;
-    --primary-dark: #3A7BC8;
-    --success-color: #52C41A;
-    --success-light: #E6F7E6;
-    --warning-color: #FAAD14;
-    --warning-light: #FFF7E6;
-    --danger-color: #FF4D4F;
-    --danger-light: #FFF1F0;
-    --text-primary: #1F2329;
-    --text-secondary: #646A73;
-    --text-muted: #8F959E;
-    --text-light: #BBBFC4;
+    /* 智环引诊 — 医疗专业配色系统 */
+    --primary-color: #1B3A4B;
+    --accent-color: #3B82C0;
+    --accent-hover: #2F6EA8;
+    --accent-light: #EBF4FC;
+    --accent-dark: #256BA0;
+    --accent-subtle: rgba(59,130,192,0.06);
+    --success-color: #2D9F5C;
+    --success-light: #E8F7EF;
+    --success-dark: #228B47;
+    --warning-color: #E8992D;
+    --warning-light: #FEF6EC;
+    --warning-dark: #C47A1A;
+    --danger-color: #D94848;
+    --danger-light: #FDEDED;
+    --danger-dark: #BC3A3A;
     --bg-primary: #FFFFFF;
-    --bg-secondary: #F5F7FA;
-    --bg-tertiary: #F0F2F5;
-    --border-color: #E5E6EB;
-    --border-light: #F0F1F2;
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
-    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+    --bg-secondary: #F7F8FA;
+    --bg-tertiary: #EDF0F4;
+    --text-primary: #1A1D21;
+    --text-secondary: #555A60;
+    --text-muted: #959BA3;
+    --text-inverse: #FFFFFF;
+    --border-color: #E0E3E8;
+    --border-light: #EDF0F4;
+    --shadow-sm: 0 1px 3px rgba(27,58,75,0.05), 0 0 0 1px rgba(27,58,75,0.02);
+    --shadow-md: 0 4px 16px rgba(27,58,75,0.07), 0 0 0 1px rgba(27,58,75,0.03);
+    --shadow-lg: 0 8px 32px rgba(27,58,75,0.09), 0 0 0 1px rgba(27,58,75,0.04);
+    --shadow-card: 0 2px 8px rgba(27,58,75,0.05), 0 0 0 1px rgba(0,0,0,0.04);
     --radius-sm: 8px;
     --radius-md: 12px;
     --radius-lg: 16px;
-    --radius-xl: 24px;
-    --transition-base: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --radius-xl: 20px;
+    --radius-full: 9999px;
+    --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-smooth: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-expressive: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }

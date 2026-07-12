@@ -5,8 +5,8 @@
 
 .queue-number {
     font-size: 48px;
-    font-weight: bold;
-    color: var(--primary-color);
+    font-weight: 700;
+    color: var(--accent-color);
     margin-bottom: 10px;
 }
 
@@ -29,7 +29,7 @@
 .queue-stat-value {
     font-size: 18px;
     font-weight: 600;
-    color: var(--primary-color);
+    color: var(--accent-color);
 }
 
 .queue-stat-label {
@@ -37,30 +37,32 @@
     color: var(--text-secondary);
 }
 
+/* 聊天 */
 .chat-container {
     background: var(--bg-secondary);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     padding: 20px;
     margin: 20px 0;
 }
 
 .chat-message {
-    margin-bottom: 15px;
+    margin-bottom: 16px;
     max-width: 80%;
 }
 
 .chat-message.user {
     margin-left: auto;
-    background: var(--bg-light);
+    background: var(--accent-color);
+    color: #FFFFFF;
     border-radius: var(--radius-md) var(--radius-md) 0 var(--radius-md);
-    padding: 10px 15px;
+    padding: 12px 16px;
 }
 
 .chat-message.system {
     background: var(--bg-primary);
     border-radius: var(--radius-md) var(--radius-md) var(--radius-md) 0;
-    padding: 10px 15px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    padding: 12px 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
 }
 
 .chat-input {
@@ -74,13 +76,25 @@
     border: 1px solid var(--border-color);
     border-radius: 20px 0 0 20px;
     font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.chat-input input:focus {
+    border-color: var(--accent-color);
 }
 
 .chat-input button {
-    background: var(--primary-color);
-    color: var(--bg-primary);
+    background: var(--accent-color);
+    color: #FFFFFF;
     border: none;
     padding: 0 20px;
     border-radius: 0 20px 20px 0;
     cursor: pointer;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+
+.chat-input button:hover {
+    background: var(--accent-hover);
 }

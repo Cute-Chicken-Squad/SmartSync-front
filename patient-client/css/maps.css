@@ -1,24 +1,29 @@
 .map-container {
     width: 100%;
     height: 300px;
-    background: var(--border-light);
-    border-radius: var(--radius-md);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-lg);
     margin: 20px 0;
     position: relative;
+    overflow: hidden;
+    border: 1px solid var(--border-light);
 }
 
 .map-image {
     width: 100%;
     height: 100%;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
+    object-fit: cover;
 }
 
 .map-marker {
     position: absolute;
     width: 20px;
     height: 20px;
-    background: var(--primary-color);
+    background: var(--accent-color);
     border-radius: 50%;
+    border: 3px solid #FFFFFF;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
@@ -36,10 +41,11 @@
 .trace-map {
     width: 100%;
     height: 300px;
-    background: var(--border-light);
-    border-radius: var(--radius-md);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-lg);
     margin: 20px 0;
     position: relative;
+    border: 1px solid var(--border-light);
 }
 
 .trace-stats {
@@ -55,10 +61,38 @@
 .trace-stat-value {
     font-size: 18px;
     font-weight: 600;
-    color: var(--primary-color);
+    color: var(--accent-color);
 }
 
 .trace-stat-label {
     font-size: 12px;
     color: var(--text-secondary);
+}
+
+/* 地图图例 */
+.map-legend {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    padding: 12px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.legend-dot.current { background: var(--accent-color); }
+.legend-dot.destination { background: var(--danger-color); }
+
+.legend-text {
+    font-size: 12px;
+    color: var(--text-muted);
 }

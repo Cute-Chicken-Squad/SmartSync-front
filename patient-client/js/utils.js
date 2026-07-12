@@ -1,10 +1,3 @@
-function showPage(pageId) {
-    document.querySelectorAll('.page').forEach(page => {
-        page.classList.remove('active');
-    });
-    document.getElementById(pageId).classList.add('active');
-}
-
 function animateProgress() {
     const progressBars = document.querySelectorAll('.progress-fill');
     progressBars.forEach(bar => {
@@ -43,7 +36,6 @@ function createTouchFeedback(x, y) {
     }, 600);
 }
 
-window.showPage = showPage;
 window.animateProgress = animateProgress;
 window.showTouchHint = showTouchHint;
 window.createTouchFeedback = createTouchFeedback;
