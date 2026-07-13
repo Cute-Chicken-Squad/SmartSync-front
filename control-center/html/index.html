@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>智环引诊 - 云端调度中心</title>
-    <link rel="stylesheet" href="/control-center/css/common.css">
-    <link rel="stylesheet" href="/control-center/css/index.css">
+    <link rel="stylesheet" href="../css/common.css">
+    <link rel="stylesheet" href="../css/index.css">
 </head>
 
 <body>
@@ -19,25 +19,25 @@
             </div>
             <ul class="nav-menu">
                 <li class="nav-item">
-                    <a href="/dashboard" class="nav-link active">首页</a>
+                    <a href="index.html" class="nav-link active">首页</a>
                 </li>
                 <li class="nav-item">
-                    <a href="/dispatch" class="nav-link">调度管理</a>
+                    <a href="dispatch.html" class="nav-link">调度管理</a>
                 </li>
                 <li class="nav-item">
-                    <a href="/bracelet" class="nav-link">手环管理</a>
+                    <a href="bracelet.html" class="nav-link">手环管理</a>
                 </li>
                 <li class="nav-item">
-                    <a href="/task-monitor" class="nav-link">任务监控</a>
+                    <a href="task-monitor.html" class="nav-link">任务监控</a>
                 </li>
                 <li class="nav-item">
-                    <a href="/emergency" class="nav-link">紧急情况</a>
+                    <a href="emergency.html" class="nav-link">紧急情况</a>
                 </li>
                 <li class="nav-item">
-                    <a href="/analytics" class="nav-link">数据分析</a>
+                    <a href="analytics.html" class="nav-link">数据分析</a>
                 </li>
                 <li class="nav-item">
-                    <a href="/settings" class="nav-link">系统设置</a>
+                    <a href="settings.html" class="nav-link">系统设置</a>
                 </li>
             </ul>
         </aside>
@@ -69,7 +69,7 @@
                     <div class="kpi-value">1,247</div>
                     <div class="kpi-change negative"><span>↓</span>较昨日 -1.7%</div>
                 </div>
-                <div class="kpi-card bracelet-card" onclick="location.href='/bracelet'" style="cursor: pointer;">
+                <div class="kpi-card bracelet-card" onclick="location.href='bracelet.html'" style="cursor: pointer;">
                     <div class="kpi-title">已绑定手环</div>
                     <div class="kpi-value">142</div>
                     <div class="kpi-change"><span>可用</span>14 个</div>
@@ -95,7 +95,7 @@
                 <div class="content-card">
                     <div class="card-header">
                         <h3 class="card-title">科室负载排行</h3>
-                        <a href="/dept-load" class="card-more">更多 ›</a>
+                        <a href="dept-load.html" class="card-more">更多 ›</a>
                     </div>
                     <div class="dept-list">
                         <div class="dept-row">
@@ -155,7 +155,7 @@
                 <div class="content-card emergency-card">
                     <div class="card-header">
                         <h3 class="card-title">紧急求助实时警报</h3>
-                        <a href="/emergency" class="card-more">更多 ›</a>
+                        <a href="emergency.html" class="card-more">更多 ›</a>
                     </div>
                     <div class="alarm-list">
                         <div class="alarm-item">
@@ -342,7 +342,7 @@
 
     <script src="/js/api-config.js"></script>
     <script src="/js/mock-data.js"></script>
-    <script src="/control-center/js/index.js"></script>
+    <script src="../js/index.js"></script>
 </body>
 
 </html>
