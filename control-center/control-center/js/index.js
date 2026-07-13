@@ -40,8 +40,11 @@ async function loadKpi() {
             const d = res.data;
             updateKpiCard(0, fmtNum(d.todayVisits), null);
             updateKpiCard(1, fmtNum(d.currentOnsite), null);
-            // 第三张是手环卡片，不更新
+            updateKpiCard(2, (d.deptUtilization != null ? Number(d.deptUtilization).toFixed(1) + '%' : '--'), null);
             updateKpiCard(3, fmtNum(d.pendingAlarms), d.pendingAlarms > 0 ? 'danger' : 'positive');
+
+            // 更新手环统计（如果 DOM 中存在）
+            updateBraceletStats(d.boundBracelets, d.availableBracelets);
         }
     } catch (e) { showError('KPI', e); }
 }
@@ -49,6 +52,13 @@ async function loadKpi() {
 function updateKpiCard(index, value, changeClass) {
     const cards = document.querySelectorAll('.kpi-card .kpi-value');
     if (cards[index]) cards[index].textContent = value;
+}
+
+function updateBraceletStats(bound, available) {
+    const el = document.getElementById('braceletStats');
+    if (el && bound != null) {
+        el.textContent = '已绑定 ' + fmtNum(bound) + ' 个  |  可用 ' + fmtNum(available) + ' 个';
+    }
 }
 
 // ===================== 科室负载排行 =====================
@@ -394,15 +404,18 @@ window.addEventListener('load', async () => {
     const loggedIn = await initAuth();
     if (!loggedIn) {
         showLoginDialog('请使用管理员账号登录');
-        // 监听登录成功事件（登录对话框关闭后刷新数据）
+        // 监听登录成功事件（登录对话框关闭后刷新数据 + 启动警报监听）
         const observer = new MutationObserver(() => {
             if (!document.getElementById('loginOverlay')) {
                 observer.disconnect();
                 refreshAllData();
+                if (typeof AlarmPopup !== 'undefined') AlarmPopup.start();
             }
         });
         observer.observe(document.body, { childList: true });
         return;
     }
     refreshAllData();
+    // 启动警报弹窗监听
+    if (typeof AlarmPopup !== 'undefined') AlarmPopup.start();
 });

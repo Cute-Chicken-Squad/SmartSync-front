@@ -1174,38 +1174,30 @@
                         <div class="task-icon">GPS</div>
                         <div>
                             <div style="font-weight: 600;">目的地</div>
-                            <div style="font-size: 12px; color: var(--accent-color);">3F 心内科诊室</div>
+                            <div style="font-size: 12px; color: var(--accent-color);" id="navDest">3F 心内科诊室</div>
                         </div>
                     </div>
                     <div style="display: flex; gap: 16px; margin-bottom: 20px;">
                         <div class="info-label" style="flex: 1;">步行时间</div>
-                        <div class="info-value highlight">约5分钟</div>
+                        <div class="info-value highlight" id="navDuration">约5分钟</div>
                     </div>
-                    <div style="background: var(--bg-secondary); border-radius: var(--radius-md); padding: 16px;">
+                    <div id="navSteps" style="background: var(--bg-secondary); border-radius: var(--radius-md); padding: 16px;">
                         <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
-                            <div
-                                style="width: 32px; height: 32px; background: var(--accent-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #FFFFFF; font-weight: 600; font-size: 14px;">
-                                1</div>
+                            <div style="width: 32px; height: 32px; background: var(--accent-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #FFFFFF; font-weight: 600; font-size: 14px;">1</div>
                             <div style="flex: 1;">
                                 <div style="font-weight: 500;">从当前位置出发</div>
                                 <div style="font-size: 12px; color: var(--text-muted);">门诊楼1层大厅</div>
                             </div>
                         </div>
                         <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
-                            <div
-                                style="width: 24px; height: 24px; background: var(--bg-secondary); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                                <span style="font-size: 12px; color: var(--accent-color); font-weight: 600;">→</span>
-                            </div>
+                            <div style="width: 24px; height: 24px; background: var(--bg-secondary); border-radius: 50%; display: flex; align-items: center; justify-content: center;"><span style="font-size: 12px; color: var(--accent-color); font-weight: 600;">→</span></div>
                             <div style="flex: 1;">
                                 <div style="font-weight: 500;">乘坐电梯上3楼</div>
                                 <div style="font-size: 12px; color: var(--text-muted);">电梯在走廊尽头左转</div>
                             </div>
                         </div>
                         <div style="display: flex; align-items: center; gap: 16px;">
-                            <div
-                                style="width: 24px; height: 24px; background: var(--bg-secondary); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                                <span style="font-size: 12px; color: var(--accent-color); font-weight: 600;">→</span>
-                            </div>
+                            <div style="width: 24px; height: 24px; background: var(--bg-secondary); border-radius: 50%; display: flex; align-items: center; justify-content: center;"><span style="font-size: 12px; color: var(--accent-color); font-weight: 600;">→</span></div>
                             <div style="flex: 1;">
                                 <div style="font-weight: 500;">出电梯左转</div>
                                 <div style="font-size: 12px; color: var(--text-muted);">诊室在走廊尽头</div>
@@ -1213,7 +1205,9 @@
                         </div>
                     </div>
                     <button class="btn btn-primary btn-block" style="margin-top: 20px;"
-                        onclick="showToast('导航已开始')">开始导航</button>
+                        onclick="loadNavigationRoute()">开始导航</button>
+                    <button class="btn btn-secondary btn-block" style="margin-top: 12px;"
+                        onclick="arriveDestination()">到达目的地</button>
                 </div>
             </div>
         </div>
@@ -1864,6 +1858,62 @@
             showToast('正在绑定家人手环...', 'info');
             try { await PatientService.bindFamily({ familyPatientId: PatientSession.getPatientId() }); } catch(e) {}
             showToast('绑定成功！', 'success');
+        }
+
+        // ===== 导航功能（内联保证可用） =====
+        var _navState = { fromNodeId: 'entrance_1f', toNodeId: null, routeData: null };
+
+        async function loadNavigationRoute() {
+            showToast('正在规划路线...', 'info');
+            try {
+                var task = await PatientService.getCurrentTask();
+                var destName = (task && task.taskName) || (task && task.department) || '心内科诊室';
+                var floor = (task && task.floor) || '3F';
+                var toNodeId = (task && (task.room || task.department)) || '心内科';
+
+                var destEl = document.getElementById('navDest');
+                if (destEl) destEl.textContent = floor + ' ' + destName;
+
+                var route = await PatientService.getNavigation(_navState.fromNodeId, toNodeId);
+                if (route) {
+                    _navState.routeData = route;
+                    _navState.toNodeId = toNodeId;
+
+                    var durEl = document.getElementById('navDuration');
+                    if (durEl && route.duration) durEl.textContent = '约' + route.duration + '分钟';
+
+                    var stepsEl = document.getElementById('navSteps');
+                    if (stepsEl && route.steps && route.steps.length) {
+                        stepsEl.innerHTML = route.steps.map(function(s, i) {
+                            return '<div style="display:flex;align-items:center;gap:16px;margin-bottom:' + (i < route.steps.length-1 ? '16px' : '0') + ';">' +
+                                '<div style="width:' + (i===0?'32px':'24px') + ';height:' + (i===0?'32px':'24px') + ';background:' + (i===0?'var(--accent-color)':'var(--bg-secondary)') + ';border-radius:50%;display:flex;align-items:center;justify-content:center;color:' + (i===0?'#FFFFFF':'var(--accent-color)') + ';font-weight:600;font-size:' + (i===0?'14px':'12px') + ';flex-shrink:0;">' + (i===0?(i+1):'→') + '</div>' +
+                                '<div style="flex:1;"><div style="font-weight:500;">' + (s.step||s.instruction||'') + '</div><div style="font-size:12px;color:var(--text-muted);">' + (s.detail||'') + '</div></div></div>';
+                        }).join('');
+                    }
+
+                    await PatientService.startNavigation(PatientSession.getVisitId(), _navState.fromNodeId, toNodeId);
+                }
+                showToast('导航已开始，请按路线前行', 'success');
+                if (window.voiceEnabled && 'speechSynthesis' in window) {
+                    var u = new SpeechSynthesisUtterance('导航已开始，预计' + (route && route.duration ? route.duration : '3') + '分钟到达');
+                    u.lang = 'zh-CN'; u.rate = 0.8;
+                    speechSynthesis.cancel(); speechSynthesis.speak(u);
+                }
+            } catch(e) {
+                showToast('导航已开始（演示模式）', 'success');
+            }
+        }
+
+        async function arriveDestination() {
+            showToast('正在确认到达...', 'info');
+            try {
+                var nodeId = _navState.toNodeId || 'destination';
+                await PatientService.arriveNavigation(PatientSession.getVisitId(), nodeId);
+                showToast('已到达！进度已更新', 'success');
+            } catch(e) {
+                showToast('已到达目的地', 'success');
+            }
+            showPage('overview');
         }
 
         async function confirmReturn() {

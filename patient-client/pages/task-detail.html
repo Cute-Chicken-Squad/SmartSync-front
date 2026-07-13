@@ -5,67 +5,62 @@
             <h2 class="header-title">当前任务</h2>
         </div>
         <div class="header-right">
-            <span class="task-progress">2/8</span>
+            <span class="task-progress" data-bind="progress.current">2/8</span>
         </div>
     </div>
-    
+
     <div class="task-card">
         <div class="task-header">
-            
+            <div class="task-icon">📍</div>
             <div class="task-meta">
-                <div class="task-department">心电图检查</div>
-                <div class="task-location">3F 心电图室</div>
+                <div class="task-department" id="taskDeptName">心电图检查</div>
+                <div class="task-location" id="taskLocation">3F 心电图室</div>
             </div>
         </div>
-        
+
         <div class="task-info">
             <div class="info-item">
                 <span class="info-label">预计等待</span>
-                <span class="info-value">15分钟</span>
+                <span class="info-value" id="taskWaitTime">15分钟</span>
             </div>
         </div>
-        
+
         <div class="direction-section">
             <div class="direction-header">
-                <span class="direction-title">导航指引</span>
+                <span class="direction-title">📐 导航指引</span>
             </div>
             <div class="direction-content">
                 <div class="direction-arrow">↑</div>
-                <div class="direction-text">直行30米右转</div>
-                <div class="direction-sub">前方电梯上3楼</div>
+                <div class="direction-text" id="taskDirection">直行30米右转</div>
+                <div class="direction-sub" id="taskDirectionSub">前方电梯上3楼</div>
             </div>
         </div>
-        
-        <button class="btn btn-primary btn-block" onclick="showPage('navigation')">查看路线</button>
+
+        <button class="btn btn-primary btn-block" onclick="startNavigation()">开始导航</button>
     </div>
-    
+
     <div class="tips-card">
         <div class="tips-header">
-            
+            <span class="tips-icon">💡</span>
             <span class="tips-title">温馨提示</span>
         </div>
-        <div class="tips-content">
+        <div class="tips-content" id="taskTips">
             <p>检查前请保持安静休息5分钟</p>
             <p>请穿着宽松衣物，便于检查</p>
-            <p>检查过程约需10-15分钟</p>
         </div>
     </div>
-    
+
     <div class="bottom-nav">
-        <button class="nav-item" onclick="showPage('overview')">
-            
+        <button class="nav-item active" onclick="showPage('overview')">
             <span class="nav-text">首页</span>
         </button>
         <button class="nav-item" onclick="showPage('reports')">
-            
             <span class="nav-text">报告</span>
         </button>
         <button class="nav-item" onclick="showPage('reminder')">
-            
             <span class="nav-text">复诊</span>
         </button>
         <button class="nav-item" onclick="showPage('profile')">
-            
             <span class="nav-text">我的</span>
         </button>
     </div>

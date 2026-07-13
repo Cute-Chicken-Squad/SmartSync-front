@@ -83,7 +83,7 @@
             <div class="card">
                 <div class="card-header">
                     <h4 class="card-title">警报记录</h4>
-                    <span style="font-size: 12px; color: #666;">共 5 条记录</span>
+                    <span style="font-size: 12px; color: #666;" id="alarmCount">加载中...</span>
                 </div>
                 <div class="table-container">
                     <table class="data-table">
@@ -97,65 +97,7 @@
                                 <th>操作</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr>
-                                <td>14:35:28</td>
-                                <td>2F-洗手间附近</td>
-                                <td>患者触发紧急求助按钮，需要立即响应</td>
-                                <td><span class="status-badge danger">紧急</span></td>
-                                <td><span class="status-badge warning">待处理</span></td>
-                                <td>
-                                    <button class="btn-sm" onclick="viewAlarmDetail(1)">查看</button>
-                                    <button class="btn-sm" style="background: #4caf50;"
-                                        onclick="handleAlarm(1)">处理</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>14:33:15</td>
-                                <td>1F-电梯厅</td>
-                                <td>患者需要轮椅协助通行</td>
-                                <td><span class="status-badge danger">紧急</span></td>
-                                <td><span class="status-badge warning">待处理</span></td>
-                                <td>
-                                    <button class="btn-sm" onclick="viewAlarmDetail(2)">查看</button>
-                                    <button class="btn-sm" style="background: #4caf50;"
-                                        onclick="handleAlarm(2)">处理</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>14:28:42</td>
-                                <td>3F-检验科门口</td>
-                                <td>患者等待时间过长，建议分流</td>
-                                <td><span class="status-badge warning">中等</span></td>
-                                <td><span class="status-badge warning">待处理</span></td>
-                                <td>
-                                    <button class="btn-sm" onclick="viewAlarmDetail(3)">查看</button>
-                                    <button class="btn-sm" style="background: #4caf50;"
-                                        onclick="handleAlarm(3)">处理</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>14:25:10</td>
-                                <td>医技楼B区</td>
-                                <td>设备维护提醒 - NFC终端#12需要校准</td>
-                                <td><span class="status-badge warning">中等</span></td>
-                                <td><span class="status-badge warning">待处理</span></td>
-                                <td>
-                                    <button class="btn-sm" onclick="viewAlarmDetail(4)">查看</button>
-                                    <button class="btn-sm" style="background: #4caf50;"
-                                        onclick="handleAlarm(4)">处理</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>14:20:33</td>
-                                <td>1F-门诊大厅</td>
-                                <td>患者已成功引导至心内科诊室</td>
-                                <td><span class="status-badge normal">一般</span></td>
-                                <td><span class="status-badge normal">已处理</span></td>
-                                <td>
-                                    <button class="btn-sm" onclick="viewAlarmDetail(5)">查看</button>
-                                </td>
-                            </tr>
+                        <tbody id="alarmTableBody">
                         </tbody>
                     </table>
                 </div>
@@ -163,58 +105,9 @@
         </main>
     </div>
 
-    <script>
-        setInterval(function () {
-            var date = new Date();
-            var timeString = date.toISOString().replace('T', ' ').substring(0, 19);
-            document.getElementById('dateInfo').textContent = timeString;
-        }, 1000);
-
-        function exportAlarms() {
-            var btn = event.target;
-            btn.innerHTML = '导出中...';
-            btn.disabled = true;
-            setTimeout(function () {
-                btn.innerHTML = '导出记录';
-                btn.disabled = false;
-                alert('警报记录导出成功！');
-            }, 1500);
-        }
-
-        function filterAlarms() {
-            alert('筛选功能已触发');
-        }
-
-        function refreshAlarms() {
-            var btn = event.target;
-            btn.innerHTML = '刷新中...';
-            btn.disabled = true;
-            setTimeout(function () {
-                btn.innerHTML = '刷新';
-                btn.disabled = false;
-                alert('数据已刷新');
-            }, 1000);
-        }
-
-        function viewAlarmDetail(id) {
-            alert('查看警报 #' + id + ' 详情');
-        }
-
-        function handleAlarm(id) {
-            var btn = event.target;
-            btn.innerHTML = '处理中...';
-            btn.disabled = true;
-            setTimeout(function () {
-                btn.innerHTML = '已处理';
-                btn.disabled = false;
-                alert('警报 #' + id + ' 处理成功！');
-            }, 1000);
-        }
-
-        function goBack() {
-            window.location.href = 'emergency.html';
-        }
-    </script>
+    <script src="/js/api-config.js"></script>
+    <script src="/js/mock-data.js"></script>
+    <script src="../js/alarm-list.js"></script>
 </body>
 
 </html>

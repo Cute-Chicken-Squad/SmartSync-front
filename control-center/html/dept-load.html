@@ -117,7 +117,7 @@
                                 <th>操作</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="deptTableBody">
                             <tr>
                                 <td>检验科</td>
                                 <td>156</td>
@@ -276,51 +276,9 @@
         </main>
     </div>
 
-    <script>
-        setInterval(function () {
-            var date = new Date();
-            var timeString = date.toISOString().replace('T', ' ').substring(0, 19);
-            document.getElementById('dateInfo').textContent = timeString;
-        }, 1000);
-
-        function goBack() {
-            window.location.href = 'index.html';
-        }
-
-        function exportData() {
-            var btn = event.target;
-            btn.innerHTML = '导出中...';
-            btn.disabled = true;
-            setTimeout(function () {
-                btn.innerHTML = '导出数据';
-                btn.disabled = false;
-                alert('科室负载数据导出成功！');
-            }, 1500);
-        }
-
-        function filterData() {
-            alert('筛选功能已触发');
-        }
-
-        function sortData() {
-            alert('排序功能已触发');
-        }
-
-        function refreshData() {
-            var btn = event.target;
-            btn.innerHTML = '刷新中...';
-            btn.disabled = true;
-            setTimeout(function () {
-                btn.innerHTML = '刷新';
-                btn.disabled = false;
-                alert('数据已刷新');
-            }, 1000);
-        }
-
-        function viewDetail(deptName) {
-            window.location.href = 'queue-detail.html?dept=' + encodeURIComponent(deptName);
-        }
-    </script>
+    <script src="/js/api-config.js"></script>
+    <script src="/js/mock-data.js"></script>
+    <script src="../js/dept-load.js"></script>
 </body>
 
 </html>

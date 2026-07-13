@@ -116,17 +116,21 @@ function updateDateTime() {
     }, 1000);
 }
 
-// 更新汇总统计
-function updateSummaryStats() {
-    const total = 156;
-    const bound = assignedBracelets.filter(p => p.status === 'active').length;
-    const available = total - bound;
-    const todayAssigned = assignedBracelets.filter(p => p.bindTime.startsWith('2026-06-17')).length;
-
-    document.getElementById('totalBracelets').textContent = total;
-    document.getElementById('boundBracelets').textContent = bound;
-    document.getElementById('availableBracelets').textContent = available;
-    document.getElementById('todayAssigned').textContent = todayAssigned;
+// 更新汇总统计（API 优先，失败时本地计算降级）
+async function updateSummaryStats() {
+    try {
+        await loadBraceletSummary();
+    } catch (e) {
+        // 降级：本地计算
+        const total = 156;
+        const bound = assignedBracelets.filter(p => p.status === 'active').length;
+        const available = total - bound;
+        const todayAssigned = assignedBracelets.filter(p => p.bindTime && p.bindTime.startsWith(new Date().toISOString().substring(0, 10))).length;
+        document.getElementById('totalBracelets').textContent = total;
+        document.getElementById('boundBracelets').textContent = bound;
+        document.getElementById('availableBracelets').textContent = available;
+        document.getElementById('todayAssigned').textContent = todayAssigned;
+    }
 }
 
 // 播放滴声（Web Audio API）
@@ -297,9 +301,34 @@ function goToStep3(braceletId) {
     document.getElementById('assignStatus').textContent = '已完成';
     document.getElementById('assignStatus').classList.add('active');
 
-    // 添加到列表
-    addPatientToList(patientData);
-    updateSummaryStats();
+    // ★ 写入后端数据库
+    createPatientApi({
+        name: patientData.name,
+        idCardNo: patientData.idCardNo,
+        gender: patientData.gender,
+        age: patientData.age,
+        phone: patientData.phone,
+        insuranceNo: patientData.insuranceNo,
+        medicalHistory: patientData.medicalHistory,
+        emergencyContactName: patientData.emergencyContactName,
+        emergencyContactPhone: patientData.emergencyContactPhone,
+        dept: patientData.targetDept,
+        deptName: patientData.deptName,
+        braceletId: braceletId,
+        maskedId: maskedId,
+        bindTime: patientData.bindTime,
+    }).then(result => {
+        if (result) {
+            console.log('[手环] 患者已写入后端:', patientData.name, result);
+            // 添加到本地列表
+            addPatientToList(patientData);
+            updateSummaryStats();
+        } else {
+            console.warn('[手环] 后端写入失败，仅本地保存');
+            addPatientToList(patientData);
+            updateSummaryStats();
+        }
+    });
 }
 
 // 渲染任务队列
@@ -478,17 +507,48 @@ function printTicket() {
     alert('小票打印中...\n\n患者：' + patientData.name + '\n脱敏ID：' + patientData.maskedId + '\n科室：' + patientData.deptName + '\n手环：' + patientData.braceletId);
 }
 
-// 加载患者列表
-function loadPatientList() {
-    const tbody = document.getElementById('patientList');
+// 加载患者列表（API 优先）
+async function loadPatientList() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
 
+    // 尝试从 API 加载
+    try {
+        const data = await fetchPatientsApi(currentPage, pageSize, searchTerm);
+        if (data && data.records) {
+            // 将 API 数据映射到本地格式
+            assignedBracelets = data.records.map(r => ({
+                id: r.id,
+                name: r.name,
+                maskedId: r.maskedId || r.idCardNo,
+                braceletId: r.braceletId || '',
+                dept: r.deptName || r.dept || '',
+                deptCode: r.dept || '',
+                bindTime: r.bindTime || r.createdAt || '',
+                status: r.status === 1 || r.status === 'active' ? 'active' : 'inactive',
+            }));
+            totalPatients = data.total || assignedBracelets.length;
+            renderPatientTable(searchTerm);
+            updatePageInfo();
+            return;
+        }
+    } catch (e) {
+        console.warn('[手环] API 加载列表失败，使用本地数据:', e.message);
+    }
+
+    // 降级：本地过滤
+    renderPatientTable(searchTerm);
+    updatePageInfo();
+}
+
+/** 渲染患者表格 */
+function renderPatientTable(searchTerm) {
+    const tbody = document.getElementById('patientList');
     let filteredList = assignedBracelets;
     if (searchTerm) {
         filteredList = assignedBracelets.filter(p =>
             p.name.toLowerCase().includes(searchTerm) ||
-            p.braceletId.toLowerCase().includes(searchTerm) ||
-            p.maskedId.toLowerCase().includes(searchTerm)
+            (p.braceletId || '').toLowerCase().includes(searchTerm) ||
+            (p.maskedId || '').toLowerCase().includes(searchTerm)
         );
     }
 
@@ -514,8 +574,6 @@ function loadPatientList() {
         `;
         tbody.appendChild(row);
     });
-
-    updatePageInfo();
 }
 
 // 搜索患者
@@ -574,11 +632,20 @@ function closeUnbindModal() {
     selectedPatientId = null;
 }
 
-function confirmUnbind() {
+async function confirmUnbind() {
     if (selectedPatientId) {
         const patient = assignedBracelets.find(p => p.id === selectedPatientId);
         if (patient) {
-            patient.status = 'inactive';
+            // ★ 调用后端 API 删除/解绑
+            const ok = await deletePatientApi(selectedPatientId);
+            if (ok) {
+                patient.status = 'inactive';
+                console.log('[手环] 已通过 API 解绑:', patient.name);
+            } else {
+                // API 失败也本地标记（降级）
+                patient.status = 'inactive';
+                console.warn('[手环] API 解绑失败，仅本地标记');
+            }
             loadPatientList();
             updateSummaryStats();
         }
@@ -664,48 +731,68 @@ function maskIdCard(idCard) {
     return idCard.substring(0, 6) + '********' + idCard.substring(14);
 }
 
-// API调用函数（用于与后端交互）
+// ===================== API 对接层 =====================
+
+/** 创建患者 → POST /api/patient */
 async function createPatientApi(data) {
     try {
-        const response = await fetch('/api/patient', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(data)
-        });
-        const result = await response.json();
-        return result;
+        const res = await businessApi.createPatient(data);
+        if (res.code === 200) return res.data;
+        console.warn('创建患者返回非 200:', res);
+        return null;
     } catch (error) {
         console.error('创建患者失败:', error);
         return null;
     }
 }
 
+/** 更新患者 → PUT /api/patient/:id */
 async function updatePatientApi(id, data) {
     try {
-        const response = await fetch(`/api/patient/${id}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(data)
-        });
-        const result = await response.json();
-        return result;
+        const res = await businessApi.updatePatient(id, data);
+        return res.code === 200;
     } catch (error) {
         console.error('更新患者失败:', error);
+        return false;
+    }
+}
+
+/** 分页查询患者 → GET /api/patient/page */
+async function fetchPatientsApi(current, size, keyword) {
+    try {
+        const res = await businessApi.getPatientPage({ current, size, keyword: keyword || '' });
+        if (res.code === 200) return res.data;
+        console.warn('获取患者列表返回非 200:', res);
+        return null;
+    } catch (error) {
+        console.error('获取患者列表失败:', error);
         return null;
     }
 }
 
-async function fetchPatientsApi(current, size, keyword) {
+/** 加载手环库存概览 → GET /api/bracelet/summary */
+async function loadBraceletSummary() {
     try {
-        const response = await fetch(`/api/patient/page?current=${current}&size=${size}&keyword=${keyword || ''}`);
-        const result = await response.json();
-        return result;
+        const res = await businessApi.getBraceletSummary();
+        if (res.code === 200 && res.data) {
+            document.getElementById('totalBracelets').textContent = res.data.totalBracelets || 0;
+            document.getElementById('boundBracelets').textContent = res.data.boundCount || 0;
+            document.getElementById('availableBracelets').textContent = res.data.availableCount || 0;
+            document.getElementById('todayAssigned').textContent = res.data.todayIssued || 0;
+        }
+    } catch (e) {
+        console.warn('获取手环概览失败，使用本地计算:', e.message);
+        updateSummaryStats();
+    }
+}
+
+/** 删除/解绑患者 → DELETE /api/patient/:id */
+async function deletePatientApi(id) {
+    try {
+        const res = await businessApi.deletePatient(id);
+        return res.code === 200;
     } catch (error) {
-        console.error('获取患者列表失败:', error);
-        return null;
+        console.error('删除患者失败:', error);
+        return false;
     }
 }
