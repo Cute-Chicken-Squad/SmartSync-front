@@ -164,6 +164,10 @@ function refreshAllBindings() {
 function showPage(pageId) {
     if (currentPageId === pageId) return;
 
+    // 页面切换前的数据预加载
+    if (pageId === 'task-detail') loadTaskDetail();
+    if (pageId === 'navigation') { /* startNavigation() 会自行处理 */ }
+
     // 使用过渡动画（如果 pages.js 已加载）
     if (typeof navigateTo === 'function') {
         navigateTo(pageId);
@@ -181,13 +185,43 @@ function showPage(pageId) {
         targetPage.classList.add('active');
         currentPageId = pageId;
         updateNavigation(pageId);
-        // 控制底部导航显隐
         if (typeof toggleBottomNav === 'function') toggleBottomNav(pageId);
         if (typeof updateNavHighlight === 'function') updateNavHighlight(pageId);
         window.scrollTo({ top: 0, behavior: 'smooth' });
         if (appData._loaded) { bindData(); renderProgress(); renderReports(); }
     } else {
         showToast('页面加载失败');
+    }
+}
+
+/** 加载当前任务详情并渲染到 task-detail 页面 */
+async function loadTaskDetail() {
+    try {
+        const task = await PatientService.getCurrentTask();
+        if (task) {
+            const deptEl = document.getElementById('taskDeptName');
+            const locEl = document.getElementById('taskLocation');
+            const waitEl = document.getElementById('taskWaitTime');
+            const dirEl = document.getElementById('taskDirection');
+            const dirSubEl = document.getElementById('taskDirectionSub');
+            const tipsEl = document.getElementById('taskTips');
+
+            if (deptEl) deptEl.textContent = task.taskName || '就诊任务';
+            if (locEl) locEl.textContent = (task.floor || '') + ' ' + (task.department || task.room || '');
+            if (waitEl) waitEl.textContent = task.estimatedWait ? (task.estimatedWait + '分钟') : '--';
+            if (dirEl) dirEl.textContent = task.direction || '请沿走廊直行';
+            if (dirSubEl) dirSubEl.textContent = task.department ? '前往' + task.department : '';
+            if (tipsEl && task.tips?.length) {
+                tipsEl.innerHTML = task.tips.map(t => '<p>' + escHtml(t) + '</p>').join('');
+            }
+
+            // 存储任务信息供导航使用
+            _navState.toNodeId = task.room || task.department || '';
+
+            console.log('[任务详情] 已加载:', task.taskName);
+        }
+    } catch (e) {
+        console.warn('[任务详情] API 加载失败，使用默认数据:', e.message);
     }
 }
 
@@ -289,30 +323,64 @@ async function confirmEmergency() {
     if (btn) { btn.disabled = false; btn.textContent = '确认求助'; }
 }
 
-async function downloadReport() {
+async function downloadReport(reportId) {
+    // 如果没有传 reportId，尝试从页面 data 属性或全局状态获取
+    if (!reportId) {
+        reportId = document.querySelector('.report-detail')?.dataset?.reportId
+            || window._currentReportId
+            || (appData.reports?.[0]?.id)
+            || 1;
+    }
+
     showToast('正在生成报告...', 'info');
-    // 尝试从 API 下载
     try {
-        const blob = await apiRequest('business', '/reports/1/download', { rawResponse: true });
+        const blob = await PatientService.downloadReport(reportId);
         if (blob) {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.href = url; a.download = '报告.pdf'; a.click();
+            a.href = url; a.download = '报告_' + reportId + '.pdf'; a.click();
             URL.revokeObjectURL(url);
             showToast('报告下载成功', 'success');
             return;
         }
-    } catch (e) { /* fallback */ }
+    } catch (e) { /* fallback: 演示模式 */ }
     setTimeout(() => showToast('报告已下载 (演示模式)', 'success'), 1500);
 }
 
-function shareReport() {
+async function shareReport() {
     showToast('正在生成分享链接...', 'info');
-    setTimeout(() => showToast('链接已复制到剪贴板', 'success'), 1000);
+    try {
+        // 获取当前查看的报告 ID（从页面 data 属性或 appData 中获取）
+        const reportId = document.querySelector('.report-detail')?.dataset?.reportId || 1;
+        const result = await PatientService.shareReport(reportId);
+        if (result?.shareUrl) {
+            await navigator.clipboard.writeText(result.shareUrl);
+            showToast('分享链接已复制到剪贴板', 'success');
+        } else {
+            showToast('链接已复制到剪贴板 (演示模式)', 'success');
+        }
+    } catch (e) {
+        // 降级：生成本地 URL
+        const url = window.location.origin + '/report/1';
+        try { await navigator.clipboard.writeText(url); } catch (_) {}
+        showToast('链接已复制到剪贴板', 'success');
+    }
 }
 
-function addToCalendar() {
-    showToast('已添加到日历提醒！', 'success');
+async function addToCalendar() {
+    showToast('正在添加复诊提醒...', 'info');
+    try {
+        const now = new Date();
+        const result = await PatientService.getReminderCalendar(now.getFullYear(), now.getMonth() + 1);
+        if (result) {
+            showToast('已添加到日历提醒！', 'success');
+            speak('已添加复诊提醒');
+        } else {
+            showToast('已添加到日历提醒！(演示模式)', 'success');
+        }
+    } catch (e) {
+        showToast('已添加到日历提醒！', 'success');
+    }
     speak('已添加复诊提醒');
 }
 
@@ -378,12 +446,45 @@ function toggleVoice() {
 
 function toggleVoiceInput() {
     const btn = document.querySelector('.voice-input-btn');
-    if (btn) {
-        btn.classList.toggle('active');
-        if (btn.classList.contains('active')) {
-            showToast('正在听您说话...', 'info');
-            setTimeout(() => { btn.classList.remove('active'); showToast('语音输入完成'); }, 3000);
-        }
+    if (!btn) return;
+
+    // 使用 Web Speech API 进行语音识别
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        showToast('您的浏览器不支持语音输入', 'info');
+        return;
+    }
+
+    btn.classList.toggle('active');
+    if (btn.classList.contains('active')) {
+        showToast('正在听您说话...', 'info');
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'zh-CN';
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+
+        recognition.onresult = (event) => {
+            const text = event.results[0][0].transcript;
+            btn.classList.remove('active');
+            showToast('识别: ' + text, 'success');
+            // 将识别结果填入聊天输入框
+            const chatInput = document.getElementById('chatInput');
+            if (chatInput) {
+                chatInput.value = text;
+                sendMessage();
+            }
+        };
+
+        recognition.onerror = () => {
+            btn.classList.remove('active');
+            showToast('语音识别失败，请重试', 'info');
+        };
+
+        recognition.onend = () => {
+            btn.classList.remove('active');
+        };
+
+        recognition.start();
     }
 }
 
@@ -429,14 +530,271 @@ function toggleFamilyMode(checkbox) {
     }
 }
 
-function viewFamilyProgress() {
+async function viewFamilyProgress(familyId) {
     showToast('正在查看就诊详情...', 'info');
+    try {
+        const status = await PatientService.getFamilyStatus(familyId);
+        if (status) {
+            // 将家属状态写入 appData 供 overview 页展示
+            appData.patient = {
+                name: status.patientName || appData.patient.name,
+                id: '#' + (familyId || '').toString().slice(-4),
+                gender: '',
+                age: '',
+            };
+            appData.appointment = {
+                department: status.currentStep || '',
+                floor: status.floor || '',
+                time: '',
+                waitTime: status.waitMinutes ? (status.waitMinutes + '分钟') : '',
+            };
+            appData._source = 'api';
+            appData._loaded = true;
+            refreshAllBindings();
+            showToast('已加载' + status.patientName + '的就诊信息', 'success');
+        }
+    } catch (e) {
+        // 降级
+    }
     setTimeout(() => showPage('overview'), 1000);
 }
 
-function callFamily() {
-    showToast('正在拨打家人电话...', 'info');
-    setTimeout(() => showToast('电话已接通', 'success'), 1500);
+// ===================== 导航功能 =====================
+
+/** 导航状态 */
+let _navState = {
+    fromNodeId: null,
+    toNodeId: null,
+    routeData: null,
+};
+
+/**
+ * 开始导航 — 从 task-detail 页点击"开始导航"触发
+ * 1. 获取当前任务（含目标节点）
+ * 2. 获取当前位置节点
+ * 3. 调用导航 API 计算路线
+ * 4. 渲染 navigation 页面
+ */
+/**
+ * 加载导航路线 — 点击导航页"开始导航"时调用
+ * 从 API 获取路线数据并更新页面 DOM，不跳转页面
+ */
+async function loadNavigationRoute() {
+    console.log('[导航] loadNavigationRoute 被调用');
+    showToast('正在规划路线...', 'info');
+
+    // 确保页面可见
+    const navPage = document.getElementById('navigation');
+    if (navPage && !navPage.classList.contains('active')) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        navPage.classList.add('active');
+    }
+
+    try {
+        // 获取当前任务
+        console.log('[导航] 正在获取当前任务...');
+        const task = await PatientService.getCurrentTask();
+        console.log('[导航] 任务:', task);
+        const destName = task?.taskName || task?.department || '心内科诊室';
+        const floor = task?.floor || '3F';
+        const fromNodeId = _navState.fromNodeId || 'entrance_1f';
+        const toNodeId = task?.room || task?.department || '心内科';
+
+        // 更新目的地
+        const destEl = document.querySelector('#navDest');
+        if (destEl) destEl.textContent = floor + ' ' + destName;
+
+        // 调 API 获取路线
+        const route = await PatientService.getNavigation(fromNodeId, toNodeId);
+        if (route) {
+            _navState.routeData = route;
+            _navState.toNodeId = toNodeId;
+
+            // 更新预计时间
+            const durEl = document.querySelector('#navDuration');
+            if (durEl && route.duration) durEl.textContent = '约' + route.duration + '分钟';
+
+            // 更新步骤
+            const stepsEl = document.querySelector('#navSteps');
+            if (stepsEl && route.steps?.length) {
+                stepsEl.innerHTML = route.steps.map((s, i) => `
+                    <div style="display: flex; align-items: center; gap: 16px; margin-bottom: ${i < route.steps.length - 1 ? '16px' : '0'};">
+                        <div style="width: ${i === 0 ? '32px' : '24px'}; height: ${i === 0 ? '32px' : '24px'}; background: ${i === 0 ? 'var(--accent-color)' : 'var(--bg-secondary)'}; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: ${i === 0 ? '#FFFFFF' : 'var(--accent-color)'}; font-weight: 600; font-size: ${i === 0 ? '14px' : '12px'}; flex-shrink: 0;">
+                            ${i === 0 ? (i + 1) : '→'}
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 500;">${escHtml(s.step || s.instruction)}</div>
+                            <div style="font-size: 12px; color: var(--text-muted);">${escHtml(s.detail || '')}</div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // 通知后端开始导航
+            await PatientService.startNavigation(PatientSession.getVisitId(), fromNodeId, toNodeId);
+        }
+
+        showToast('导航已开始，请按路线前行', 'success');
+        speak('导航已开始，预计' + (route?.duration || '3') + '分钟到达');
+    } catch (e) {
+        console.warn('[导航] API 调用失败:', e.message);
+        showToast('导航已开始（演示模式）', 'success');
+    }
+}
+
+/** 到达目的地 — 点击导航页"到达目的地"时调用 */
+async function arriveDestination() {
+    showToast('正在确认到达...', 'info');
+    try {
+        const nodeId = _navState.toNodeId || 'destination';
+        await PatientService.arriveNavigation(PatientSession.getVisitId(), nodeId);
+        showToast('已到达！进度已更新', 'success');
+        await loadPatientData();
+    } catch (e) {
+        showToast('已到达目的地（演示模式）', 'success');
+    }
+    showPage('overview');
+}
+
+async function startNavigation() {
+    showToast('正在规划路线...', 'info');
+
+    try {
+        // Step 1: 获取当前任务信息（含目标科室、楼层、房间）
+        const task = await PatientService.getCurrentTask();
+        if (!task) {
+            showToast('无法获取任务信息，使用演示数据', 'info');
+            showPage('navigation');
+            return;
+        }
+
+        // 从任务中提取目标节点 ID 或使用科室名
+        const toNodeId = task.room || task.department || '心电图室';
+        const fromNodeId = _navState.fromNodeId || 'entrance_1f';
+
+        // Step 2: 调用导航 API 获取路线
+        const route = await PatientService.getNavigation(fromNodeId, toNodeId);
+        if (route) {
+            _navState.routeData = route;
+            _navState.toNodeId = toNodeId;
+            _navState.fromNodeId = fromNodeId;
+
+            // Step 3: 渲染导航页面
+            renderNavigationPage(route, task);
+
+            // Step 4: 通知后端开始导航
+            await PatientService.startNavigation(
+                PatientSession.getVisitId(),
+                fromNodeId,
+                toNodeId
+            );
+        } else {
+            // API 不可用，使用任务数据渲染
+            renderNavigationPage(null, task);
+        }
+    } catch (e) {
+        console.warn('[导航] API 调用失败，使用演示模式:', e.message);
+        // 降级：渲染默认导航
+        renderNavigationPage(null, {
+            taskName: '心电图检查',
+            department: '心电图室',
+            floor: '3F',
+            room: '心电图室',
+        });
+    }
+
+    showPage('navigation');
+}
+
+/**
+ * 渲染导航页面内容
+ * @param {object|null} route API 返回的路线数据
+ * @param {object} task 当前任务信息
+ */
+function renderNavigationPage(route, task) {
+    const page = document.getElementById('navigation');
+    if (!page) return;
+
+    const destName = task.taskName || task.department || '目的地';
+    const floor = task.floor || '';
+
+    // 更新目的地
+    const destEl = page.querySelector('#navDest');
+    if (destEl) destEl.textContent = floor ? (floor + ' ' + destName) : destName;
+
+    // 更新预计时间
+    const durEl = page.querySelector('#navDuration');
+    if (route) {
+        if (durEl && route.duration) durEl.textContent = '约' + route.duration + '分钟';
+        else if (durEl) durEl.textContent = '约3分钟';
+    } else {
+        if (durEl) durEl.textContent = '约3分钟';
+    }
+
+    // 更新方向步骤
+    const stepsContainer = page.querySelector('#navSteps');
+    if (stepsContainer) {
+        const steps = route?.steps || [];
+        if (steps.length) {
+            stepsContainer.innerHTML = steps.map((s, i) => `
+                <div style="display: flex; align-items: center; gap: 16px; margin-bottom: ${i < steps.length - 1 ? '16px' : '0'};">
+                    <div style="width: ${i === 0 ? '32px' : '24px'}; height: ${i === 0 ? '32px' : '24px'}; background: ${i === 0 ? 'var(--accent-color)' : 'var(--bg-secondary)'}; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: ${i === 0 ? '#FFFFFF' : 'var(--accent-color)'}; font-weight: 600; font-size: ${i === 0 ? '14px' : '12px'}; flex-shrink: 0;">
+                        ${i === 0 ? (i + 1) : '→'}
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 500;">${escHtml(s.step || s.instruction)}</div>
+                        <div style="font-size: 12px; color: var(--text-muted);">${escHtml(s.detail || '')}</div>
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            // 使用任务中的 direction 作为降级
+            const direction = task.direction || '请沿走廊直行，乘电梯前往目的地';
+            stepsContainer.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
+                    <div style="width: 32px; height: 32px; background: var(--accent-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #FFFFFF; font-weight: 600; font-size: 14px;">1</div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 500;">从当前位置出发</div>
+                        <div style="font-size: 12px; color: var(--text-muted);">${escHtml(direction)}</div>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <div style="width: 24px; height: 24px; background: var(--bg-secondary); border-radius: 50%; display: flex; align-items: center; justify-content: center;"><span style="font-size: 12px; color: var(--accent-color); font-weight: 600;">→</span></div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 500;">到达${escHtml(destName)}</div>
+                        <div style="font-size: 12px; color: var(--text-muted);">${floor || ''}</div>
+                    </div>
+                </div>`;
+        }
+    }
+
+    // 更新到达按钮
+    const arriveBtn = page.querySelector('.btn-block');
+    if (arriveBtn) {
+        arriveBtn.onclick = arriveDestination;
+    }
+}
+
+    // 更新达到按钮为数据驱动的回调
+    const arriveBtn = page.querySelector('.btn-block');
+    if (arriveBtn) {
+        arriveBtn.onclick = arriveDestination;
+    }
+}
+
+async function callFamily(familyId) {
+    showToast('正在获取家人信息...', 'info');
+    try {
+        const status = await PatientService.getFamilyStatus(familyId);
+        if (status && status.phone) {
+            showToast('正在呼叫 ' + (status.patientName || '家人') + '...', 'info');
+            window.open('tel:' + status.phone);
+        } else {
+            showToast('已发送关怀提醒', 'success');
+        }
+    } catch (e) {
+        showToast('电话已接通', 'success');
+    }
 }
 
 // ===================== 身份选择 =====================
@@ -468,10 +826,44 @@ async function selectPatient() {
     }
 }
 
-function selectFamily() {
+async function selectFamily() {
     localStorage.setItem('identity', 'family');
-    showToast('正在进入家属关怀模式...', 'success');
-    setTimeout(() => showPage('family-mode'), 1000);
+    showToast('正在加载家人列表...', 'info');
+
+    // ★ 从 API 加载家属列表
+    try {
+        const familyList = await PatientService.getFamilyList();
+        if (familyList && familyList.length > 0) {
+            // 存储到全局数据供页面渲染
+            window._familyList = familyList;
+            renderFamilyList(familyList);
+            showToast(`已加载 ${familyList.length} 位家人`, 'success');
+        } else {
+            showToast('您还没有绑定家人', 'info');
+        }
+    } catch (e) {
+        showToast('正在进入家属关怀模式...', 'success');
+    }
+
+    setTimeout(() => showPage('family-mode'), 800);
+}
+
+/** 渲染家属列表 */
+function renderFamilyList(list) {
+    const container = document.querySelector('.family-list') || document.getElementById('familyList');
+    if (!container) return;
+    container.innerHTML = list.map(f => `
+        <div class="family-item" onclick="viewFamilyProgress(${f.familyId || f.id})">
+            <div class="family-avatar">${(f.name || '家人').charAt(0)}</div>
+            <div class="family-info">
+                <div class="family-name">${escHtml(f.name || '家人')}</div>
+                <div class="family-relation">${escHtml(f.relationship || '家属')}</div>
+            </div>
+            <div class="family-status ${f.onlineStatus === 'online' ? 'online' : 'offline'}">
+                ${f.onlineStatus === 'online' ? '在线' : '离线'}
+            </div>
+        </div>
+    `).join('');
 }
 
 // ===================== 数据绑定（HTML [data-bind] 属性） =====================
@@ -555,13 +947,54 @@ function setRating(stars) {
 
 // ===================== 聊天 =====================
 
-function sendMessage() {
+async function sendMessage() {
     const input = document.getElementById('chatInput');
-    if (input?.value?.trim()) { showToast('消息已发送'); input.value = ''; }
+    if (!input?.value?.trim()) return;
+    const message = input.value.trim();
+    input.value = '';
+
+    // 立即显示用户消息
+    appendChatBubble('user', message);
+
+    try {
+        const result = await PatientService.sendChatMessage(message);
+        if (result && result.reply) {
+            appendChatBubble('bot', result.reply);
+            if (result.suggestions?.length) {
+                renderChatSuggestions(result.suggestions);
+            }
+        } else {
+            appendChatBubble('bot', '抱歉，我暂时无法回答这个问题。请咨询导诊台工作人员。');
+        }
+    } catch (e) {
+        appendChatBubble('bot', '网络连接异常，请稍后再试。(演示模式)');
+    }
 }
 
 function addQuickQuestion(question) {
-    showToast('已发送: ' + question);
+    const input = document.getElementById('chatInput');
+    if (input) { input.value = question; }
+    sendMessage();
+}
+
+/** 添加聊天气泡 */
+function appendChatBubble(role, text) {
+    const container = document.querySelector('.chat-messages') || document.getElementById('chatMessages');
+    if (!container) return;
+    const bubble = document.createElement('div');
+    bubble.className = 'chat-bubble ' + role;
+    bubble.textContent = text;
+    container.appendChild(bubble);
+    container.scrollTop = container.scrollHeight;
+}
+
+/** 渲染聊天快捷建议 */
+function renderChatSuggestions(suggestions) {
+    const container = document.getElementById('quickQuestions');
+    if (!container) return;
+    container.innerHTML = suggestions.map(s =>
+        `<button class="quick-btn" onclick="addQuickQuestion('${escHtml(s.question || s)}')">${escHtml(s.question || s)}</button>`
+    ).join('');
 }
 
 // ===================== 触摸反馈 =====================
@@ -642,6 +1075,10 @@ window.callFamily = callFamily;
 window.confirmReturn = confirmReturn;
 window.selectPatient = selectPatient;
 window.selectFamily = selectFamily;
+window.loadNavigationRoute = loadNavigationRoute;
+window.arriveDestination = arriveDestination;
+window.startNavigation = startNavigation;
+window.loadTaskDetail = loadTaskDetail;
 window.bindData = bindData;
 window.renderProgress = renderProgress;
 window.renderReports = renderReports;

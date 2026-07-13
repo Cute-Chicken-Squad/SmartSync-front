@@ -1,0 +1,187 @@
+/* ===================== 警报弹窗 ===================== */
+
+.alarm-popup-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 99990;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: alarm-overlay-in 0.2s ease;
+}
+@keyframes alarm-overlay-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.alarm-popup {
+    position: relative;
+    width: 480px;
+    max-width: 92vw;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow:
+        0 0 0 4px rgba(217, 72, 72, 0.35),
+        0 0 0 12px rgba(217, 72, 72, 0.12),
+        0 24px 64px rgba(0, 0, 0, 0.25);
+    animation: alarm-popup-in 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow: hidden;
+}
+@keyframes alarm-popup-in {
+    from { transform: scale(0.85) translateY(20px); opacity: 0; }
+    to   { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+/* --- 顶部警报条 --- */
+.alarm-popup-header {
+    background: #D94848;
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    color: #fff;
+}
+.alarm-popup-icon {
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}
+.alarm-popup-icon svg { width: 22px; height: 22px; }
+.alarm-popup-title {
+    font-size: 17px; font-weight: 700; letter-spacing: 0.02em;
+}
+.alarm-popup-subtitle {
+    font-size: 13px; opacity: 0.85; margin-top: 2px;
+}
+
+/* --- 级别标签 --- */
+.alarm-popup-level {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+.alarm-popup-level.l1 { background: rgba(255,255,255,0.25); color: #fff; }
+.alarm-popup-level.l2 { background: rgba(255,255,255,0.25); color: #fff; }
+.alarm-popup-level.l3 { background: #fff; color: #D94848; }
+.alarm-popup-level.l4 { background: #fff; color: #D94848; }
+
+/* --- 主体内容 --- */
+.alarm-popup-body {
+    padding: 24px;
+}
+.alarm-popup-rows {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+}
+.alarm-popup-row {
+    display: flex; flex-direction: column; gap: 2px;
+}
+.alarm-popup-row.full { grid-column: 1 / -1; }
+.alarm-popup-label {
+    font-size: 11px; color: #959BA3; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.04em;
+}
+.alarm-popup-value {
+    font-size: 14px; color: #1A1D21; font-weight: 500;
+    word-break: break-all;
+}
+.alarm-popup-value.danger { color: #D94848; font-weight: 700; }
+
+/* --- 底部操作栏 --- */
+.alarm-popup-actions {
+    padding: 16px 24px;
+    border-top: 1px solid #EDF0F4;
+    display: flex; gap: 10px; justify-content: flex-end;
+}
+.alarm-popup-actions button {
+    padding: 10px 22px;
+    border-radius: 8px;
+    border: none;
+    font-size: 13px; font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+}
+.alarm-popup-actions button:active { transform: scale(0.97); }
+.alarm-popup-btn-primary {
+    background: #D94848; color: #fff;
+}
+.alarm-popup-btn-primary:hover { background: #c0392b; }
+.alarm-popup-btn-secondary {
+    background: #EDF0F4; color: #555A60;
+}
+.alarm-popup-btn-secondary:hover { background: #E0E3E8; }
+.alarm-popup-btn-mute {
+    background: transparent; color: #959BA3; font-weight: 500;
+}
+.alarm-popup-btn-mute:hover { background: #F7F8FA; }
+
+/* --- 多条警报堆叠 --- */
+.alarm-popup-stack {
+    max-height: 340px;
+    overflow-y: auto;
+    padding: 0 4px 0 0;
+}
+.alarm-popup-stack-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid #EDF0F4;
+}
+.alarm-popup-stack-item:last-child { border-bottom: none; }
+.alarm-popup-stack-badge {
+    width: 8px; height: 8px; border-radius: 50%;
+    flex-shrink: 0; margin-top: 6px;
+}
+.alarm-popup-stack-badge.l3,
+.alarm-popup-stack-badge.l4 { background: #D94848; }
+.alarm-popup-stack-badge.l2 { background: #E8992D; }
+.alarm-popup-stack-badge.l1 { background: #3B82C0; }
+.alarm-popup-stack-info { flex: 1; min-width: 0; }
+.alarm-popup-stack-title { font-size: 14px; font-weight: 600; color: #1A1D21; }
+.alarm-popup-stack-meta { font-size: 12px; color: #959BA3; margin-top: 3px; }
+
+/* --- 已知晓按钮 --- */
+.alarm-popup-ack {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 0 0 16px 16px;
+    background: #1B3A4B;
+    color: #fff;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.alarm-popup-ack:hover { background: #142a38; }
+
+/* --- 声音开关指示 --- */
+.alarm-popup-sound-indicator {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11px; color: #959BA3;
+    margin-right: auto;
+    cursor: pointer;
+    user-select: none;
+}
+.alarm-popup-sound-indicator.muted { color: #D94848; text-decoration: line-through; }
+
+/* --- 子站触发行 --- */
+.substation-row {
+    background: #FEF6EC;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin: -4px 0;
+}
+.substation-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: #E8992D; color: #fff;
+    padding: 3px 10px; border-radius: 12px;
+    font-size: 12px; font-weight: 600; letter-spacing: 0.02em;
+}
+.substation-badge svg { flex-shrink: 0; }

@@ -244,7 +244,7 @@ async function exportRecords() {
 // ===================== 辅助函数 =====================
 
 function alarmTypeLabel(type) {
-    const map = { emergency: '紧急求助', wheelchair: '轮椅协助', maintenance: '设备维护', fall: '跌倒', vital: '生命体征', broadcast: '广播' };
+    const map = { emergency: '患者求助', wheelchair: '轮椅协助', maintenance: '患者求助', fall: '跌倒', vital: '生命体征', broadcast: '广播' };
     return map[type] || type || '--';
 }
 
@@ -263,6 +263,12 @@ function escHtml(str) {
     const div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
+}
+
+function filterDesc(str) {
+    if (!str) return '暂无';
+    if (str.includes('子站终端重启任务') || str.includes('子站重启任务')) return '暂无';
+    return str;
 }
 
 function downloadBlob(blob, filename) {

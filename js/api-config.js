@@ -12,6 +12,9 @@
  * 管理后台账号: admin / aaHeUasC+A6onVfID4/FeqDb
  */
 
+// 后端连接开关 — 设为 true 断开后端，前端自动使用演示数据
+const API_OFFLINE = false;
+
 const API_CONFIG = {
     // 通过同源代理访问，避免 CORS
     admin: { baseURL: '/admin/api', timeout: 15000 },
@@ -77,6 +80,12 @@ const TokenStore = {
  * @returns {Promise<{code:number, message:string, data:any}>}
  */
 async function apiRequest(config, endpoint, options = {}) {
+    // 断开后端连接 — 直接返回离线响应，触发前端降级逻辑
+    if (API_OFFLINE) {
+        console.log('[API] 离线模式 — 跳过请求: ' + endpoint);
+        return { code: 599, message: '离线模式', data: null };
+    }
+
     const { baseURL, timeout } = API_CONFIG[config];
     const url = `${baseURL}${endpoint}`;
 
@@ -413,6 +422,8 @@ const businessApi = {
 // ===================== 登录对话框 =====================
 
 function showLoginDialog(preMessage) {
+    // 离线模式不弹登录窗
+    if (API_OFFLINE) return;
     // 避免重复弹窗
     if (document.getElementById('loginOverlay')) return;
 
@@ -479,6 +490,9 @@ function showLoginDialog(preMessage) {
 
 // 尝试用已存储的 token 验证身份
 async function initAuth() {
+    // 离线模式跳过登录
+    if (API_OFFLINE) { console.log('[API] 离线模式 — 跳过登录验证'); return true; }
+
     const token = TokenStore.getAdminToken();
     if (!token) {
         console.log('[智环引诊] 未找到管理端 token，需要登录');
