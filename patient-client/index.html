@@ -988,6 +988,38 @@
                 transition-duration: 0.01ms !important;
             }
         }
+
+        /* 评价标签 */
+        .rating-tag {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 16px;
+            font-size: 13px;
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .rating-tag.selected {
+            background: var(--accent-color);
+            color: #fff;
+        }
+    </style>
+    <style>
+        /* 刷卡状态可视化 */
+        .nfc-status {
+            margin-top: 8px;
+            font-size: 13px;
+            text-align: center;
+            color: var(--text-muted, #8f959e);
+            transition: color .2s;
+        }
+        .nfc-status.scanning { color: var(--accent-color, #4a90e2); }
+        .nfc-status.success { color: #27ae60; }
+        .nfc-status.fail { color: #e74c3c; }
+        .nfc-status.unsupported { color: #f39c12; }
     </style>
 </head>
 
@@ -1010,6 +1042,22 @@
                     <div style="margin-bottom: 20px;">
                         <p style="font-size: var(--font-size-base); color: var(--text-muted); margin-bottom: 16px;">
                             请选择您的身份</p>
+                        <div style="margin-bottom: 16px; text-align: left;">
+                            <label style="font-size: var(--font-size-sm); color: var(--text-muted); display: block; margin-bottom: 6px;">测试卡选择（无实体卡联调）</label>
+                            <select id="testUidSelect" onchange="onTestUidChange(this.value)"
+                                style="width: 100%; padding: 10px; border: 1px solid #e5e6eb; border-radius: 8px; font-size: var(--font-size-base); background: #fff;">
+                                <option value="">默认测试卡（王大爷 · 心内科）</option>
+                                <option value="BC1111111111">王大爷 · 心内科</option>
+                                <option value="BC2222222222">李女士 · 内分泌科</option>
+                                <option value="BC3333333333">张先生 · 消化内科</option>
+                                <option value="BC4444444444">赵阿姨 · 内科</option>
+                                <option value="BC5555555555">孙大爷 · 外科</option>
+                                <option value="BC6666666666">周女士 · 皮肤科</option>
+                                <option value="BC7777777777">吴先生 · 骨科</option>
+                                <option value="BC8888888888">郑阿姨 · 儿科</option>
+                            </select>
+                            <div id="nfcStatus" class="nfc-status"></div>
+                        </div>
                         <button class="btn btn-primary btn-block" style="padding: 20px; margin-bottom: 16px;"
                             onclick="selectPatient()">
                             <div style="font-size: var(--font-size-lg); font-weight: 600; margin-bottom: 4px;">我是患者
@@ -1108,169 +1156,8 @@
                     </div>
                 </div>
 
-                <div class="card" style="margin-top: 16px; border: 2px dashed var(--border-color);">
-                    <div style="display: flex; align-items: center; justify-content: center; gap: 12px; padding: 16px;">
-                        <div
-                            style="width: 40px; height: 40px; background: var(--bg-secondary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px;">
-                            ↺</div>
-                        <div style="flex: 1;">
-                            <div style="font-weight: 600;">手环归还</div>
-                            <div style="font-size: 12px; color: var(--text-muted);">就诊完成后请归还手环</div>
-                        </div>
-                        <button class="btn btn-secondary" onclick="showPage('return-bracelet')">立即归还</button>
-                    </div>
-                </div>
             </div>
 
-        </div>
-
-        <div class="page" id="return-bracelet">
-            <div style="padding: 24px; padding-bottom: 80px;">
-                <div class="header">
-                    <button class="back-btn" onclick="showPage('overview')">‹</button>
-                    <div class="header-title">手环归还</div>
-                </div>
-                <div class="card" style="text-align: center; padding: 32px;">
-                    <div
-                        style="width: 80px; height: 80px; background: var(--bg-secondary); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
-                        <div style="font-size: 36px;">↺</div>
-                    </div>
-                    <h3 style="font-size: var(--font-size-lg); font-weight: 600; margin-bottom: 12px;">请将手环归还</h3>
-                    <p style="color: var(--text-secondary); margin-bottom: 24px;">感谢您使用智环引诊服务，请将手环归还至服务台</p>
-                    <button class="btn btn-primary btn-block" onclick="confirmReturn()">确认归还</button>
-                </div>
-                <div class="card" style="margin-top: 16px;">
-                    <div style="font-weight: 600; margin-bottom: 12px;">就诊完成提示</div>
-                    <ul
-                        style="list-style: none; padding-left: 0; font-size: var(--font-size-sm); color: var(--text-secondary);">
-                        <li style="margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
-                            <span
-                                style="width: 4px; height: 4px; background: var(--accent-color); border-radius: 50%;"></span>
-                            请携带好个人物品
-                        </li>
-                        <li style="margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
-                            <span
-                                style="width: 4px; height: 4px; background: var(--accent-color); border-radius: 50%;"></span>
-                            检查是否遗漏随身物品
-                        </li>
-                        <li style="display: flex; align-items: center; gap: 8px;">
-                            <span
-                                style="width: 4px; height: 4px; background: var(--accent-color); border-radius: 50%;"></span>
-                            如有需要可打印就诊报告
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-
-        <div class="page" id="navigation">
-            <div style="padding: 24px; padding-bottom: 90px;">
-                <div class="header">
-                    <button class="back-btn" onclick="showPage('overview')">‹</button>
-                    <div class="header-title">导航指引</div>
-                </div>
-                <div class="card">
-                    <div style="display: flex; gap: 16px; margin-bottom: 20px;">
-                        <div class="task-icon">GPS</div>
-                        <div>
-                            <div style="font-weight: 600;">目的地</div>
-                            <div style="font-size: 12px; color: var(--accent-color);" id="navDest">3F 心内科诊室</div>
-                        </div>
-                    </div>
-                    <div style="display: flex; gap: 16px; margin-bottom: 20px;">
-                        <div class="info-label" style="flex: 1;">步行时间</div>
-                        <div class="info-value highlight" id="navDuration">约5分钟</div>
-                    </div>
-                    <div id="navSteps" style="background: var(--bg-secondary); border-radius: var(--radius-md); padding: 16px;">
-                        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
-                            <div style="width: 32px; height: 32px; background: var(--accent-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #FFFFFF; font-weight: 600; font-size: 14px;">1</div>
-                            <div style="flex: 1;">
-                                <div style="font-weight: 500;">从当前位置出发</div>
-                                <div style="font-size: 12px; color: var(--text-muted);">门诊楼1层大厅</div>
-                            </div>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
-                            <div style="width: 24px; height: 24px; background: var(--bg-secondary); border-radius: 50%; display: flex; align-items: center; justify-content: center;"><span style="font-size: 12px; color: var(--accent-color); font-weight: 600;">→</span></div>
-                            <div style="flex: 1;">
-                                <div style="font-weight: 500;">乘坐电梯上3楼</div>
-                                <div style="font-size: 12px; color: var(--text-muted);">电梯在走廊尽头左转</div>
-                            </div>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 16px;">
-                            <div style="width: 24px; height: 24px; background: var(--bg-secondary); border-radius: 50%; display: flex; align-items: center; justify-content: center;"><span style="font-size: 12px; color: var(--accent-color); font-weight: 600;">→</span></div>
-                            <div style="flex: 1;">
-                                <div style="font-weight: 500;">出电梯左转</div>
-                                <div style="font-size: 12px; color: var(--text-muted);">诊室在走廊尽头</div>
-                            </div>
-                        </div>
-                    </div>
-                    <button class="btn btn-primary btn-block" style="margin-top: 20px;"
-                        onclick="loadNavigationRoute()">开始导航</button>
-                    <button class="btn btn-secondary btn-block" style="margin-top: 12px;"
-                        onclick="arriveDestination()">到达目的地</button>
-                </div>
-            </div>
-        </div>
-
-        <div class="page" id="chat">
-            <div style="padding: 24px; padding-bottom: 80px;">
-                <div class="header">
-                    <button class="back-btn" onclick="showPage('overview')">‹</button>
-                    <div class="header-title">智能咨询</div>
-                </div>
-                <div class="card">
-                    <div style="display: flex; gap: 12px;">
-                        <div class="task-icon" style="width: 40px; height: 40px; font-size: 12px;">AI</div>
-                        <div style="flex: 1;">
-                            <div style="font-weight: 600; margin-bottom: 4px;">智能助手</div>
-                            <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;">
-                                您好！我是您的智能就医助手。请问有什么可以帮助您的？
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="card" style="margin-top: 12px;">
-                    <div style="display: flex; gap: 12px; align-items: flex-start;">
-                        <div
-                            style="width: 40px; height: 40px; background: var(--success-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #FFFFFF; font-weight: 600; flex-shrink: 0;">
-                            王</div>
-                        <div style="flex: 1;">
-                            <div style="font-weight: 600; margin-bottom: 4px;">王大爷</div>
-                            <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;">
-                                心内科诊室怎么走？
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div style="margin-top: 20px;">
-                    <div style="display: flex; gap: 12px;">
-                        <input type="text" id="chatInput"
-                            style="flex: 1; padding: 14px 16px; background: var(--bg-secondary); border: none; border-radius: var(--radius-md); font-size: 14px;"
-                            placeholder="输入您的问题...">
-                        <button class="btn btn-primary" style="padding: 14px 20px;" onclick="sendMessage()">发送</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="page" id="emergency">
-            <div style="padding: 24px; padding-bottom: 80px;">
-                <div class="header">
-                    <button class="back-btn" onclick="showPage('overview')">‹</button>
-                    <div class="header-title">紧急求助</div>
-                </div>
-                <div class="card" style="text-align: center; padding: 40px;">
-                    <div
-                        style="width: 100px; height: 100px; background: rgba(231, 76, 60, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
-                        <span style="font-size: 48px; color: var(--danger-color);">!</span>
-                    </div>
-                    <h3 style="font-size: var(--font-size-lg); font-weight: 600; margin-bottom: 12px;">需要紧急帮助？</h3>
-                    <p style="color: var(--text-secondary); margin-bottom: 32px;">点击下方按钮，系统将通知医护人员为您提供帮助</p>
-                    <button
-                        style="background: linear-gradient(135deg, var(--danger-color), #C0392B); color: #FFFFFF; padding: 18px 48px; font-size: 16px; border: none; border-radius: var(--radius-md);"
-                        onclick="confirmEmergency()">确认求助</button>
-                </div>
-            </div>
         </div>
 
         <div class="page" id="reports">
@@ -1378,26 +1265,59 @@
             <div style="padding: 24px; padding-bottom: 80px;">
                 <div class="header">
                     <button class="back-btn" onclick="showPage('overview')">‹</button>
-                    <div class="header-title">满意度评价</div>
+                    <div class="header-title">诊后评价</div>
                 </div>
-                <div class="card" style="text-align: center;">
-                    <div style="font-size: var(--font-size-lg); font-weight: 600; margin-bottom: 8px;">感谢您使用智环引诊</div>
-                    <div style="font-size: var(--font-size-sm); color: var(--text-muted); margin-bottom: 24px;">
-                        请您对本次就诊体验进行评价</div>
-                    <div class="stars">
+
+                <!-- 就诊信息 -->
+                <div class="card" style="text-align:center;margin-bottom:16px;">
+                    <div style="font-size:13px;color:var(--text-muted);margin-bottom:4px;">本次就诊</div>
+                    <div style="font-size:16px;font-weight:600;" id="ratingDept">心内科诊室</div>
+                    <div style="font-size:12px;color:var(--text-muted);margin-top:2px;" id="ratingDoctor">王医生</div>
+                </div>
+
+                <!-- 评分区 -->
+                <div class="card" style="text-align:center;">
+                    <div style="font-size:15px;font-weight:600;margin-bottom:4px;">请为本次就诊评分</div>
+                    <div style="font-size:12px;color:var(--text-muted);margin-bottom:20px;">您的反馈将帮助我们改进服务</div>
+                    <div class="stars" id="ratingStars">
                         <span class="star" onclick="setRating(1)">★</span>
                         <span class="star" onclick="setRating(2)">★</span>
                         <span class="star" onclick="setRating(3)">★</span>
                         <span class="star" onclick="setRating(4)">★</span>
                         <span class="star" onclick="setRating(5)">★</span>
                     </div>
-                    <div style="text-align: center; font-size: 13px; color: var(--text-muted); margin-bottom: 24px;"
-                        id="ratingText">请选择评分</div>
-                    <textarea
-                        style="width: 100%; height: 80px; padding: 12px; background: var(--bg-secondary); border: none; border-radius: var(--radius-md); font-size: 14px;"
-                        placeholder="请输入您的意见或建议（选填）"></textarea>
-                    <button class="btn btn-primary btn-block" style="margin-top: 20px;"
-                        onclick="submitRating()">提交评价</button>
+                    <div style="text-align:center;font-size:14px;font-weight:600;margin-bottom:16px;height:20px;" id="ratingText"></div>
+                </div>
+
+                <!-- 快捷标签 -->
+                <div class="card" style="margin-top:12px;">
+                    <div style="font-size:13px;font-weight:600;margin-bottom:10px;">服务评价（可选）</div>
+                    <div style="display:flex;flex-wrap:wrap;gap:8px;" id="ratingTags">
+                        <span class="rating-tag" onclick="toggleRatingTag(this)">指引清晰</span>
+                        <span class="rating-tag" onclick="toggleRatingTag(this)">等待较短</span>
+                        <span class="rating-tag" onclick="toggleRatingTag(this)">态度亲切</span>
+                        <span class="rating-tag" onclick="toggleRatingTag(this)">环境舒适</span>
+                        <span class="rating-tag" onclick="toggleRatingTag(this)">方便快捷</span>
+                        <span class="rating-tag" onclick="toggleRatingTag(this)">设备先进</span>
+                    </div>
+                </div>
+
+                <!-- 留言 -->
+                <div class="card" style="margin-top:12px;">
+                    <textarea id="ratingComment"
+                        style="width:100%;height:80px;padding:12px;background:var(--bg-secondary);border:none;border-radius:var(--radius-md);font-size:14px;box-sizing:border-box;"
+                        placeholder="留下您的建议（选填）"></textarea>
+                </div>
+
+                <button class="btn btn-primary btn-block" style="margin-top:16px;" id="ratingSubmitBtn"
+                    onclick="submitRating()">提交评价</button>
+
+                <!-- 提交成功 -->
+                <div class="card" style="text-align:center;margin-top:16px;display:none;" id="ratingSuccess">
+                    <div style="font-size:40px;margin-bottom:12px;color:#2D9F5C;">&#10003;</div>
+                    <div style="font-size:16px;font-weight:600;color:#2D9F5C;">评价提交成功</div>
+                    <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">感谢您的宝贵反馈</div>
+                    <button class="btn btn-secondary" style="margin-top:16px;" onclick="showPage('overview')">返回首页</button>
                 </div>
             </div>
         </div>
@@ -1499,6 +1419,10 @@
                 </button>
                 <button class="menu-item" onclick="showPage('reminder')">
                     <span class="menu-text">复诊提醒</span>
+                    <span style="color: var(--text-muted);">›</span>
+                </button>
+                <button class="menu-item" onclick="showPage('rating')">
+                    <span class="menu-text">诊后评价</span>
                     <span style="color: var(--text-muted);">›</span>
                 </button>
                 <button class="menu-item" onclick="showPage('trace')">
@@ -1633,6 +1557,34 @@
                 </div>
             </div>
         </div>
+
+        <!-- 底部导航栏 -->
+        <div class="bottom-nav" id="bottomNav">
+            <div class="nav-item active" data-page="overview" onclick="showPage('overview')">
+                <div class="nav-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <span class="nav-text">首页</span>
+            </div>
+            <div class="nav-item" data-page="reports" onclick="showPage('reports')">
+                <div class="nav-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <span class="nav-text">报告</span>
+            </div>
+            <div class="nav-item" data-page="reminder" onclick="showPage('reminder')">
+                <div class="nav-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <span class="nav-text">复诊</span>
+            </div>
+            <div class="nav-item" data-page="profile" onclick="showPage('profile')">
+                <div class="nav-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <span class="nav-text">我的</span>
+            </div>
+        </div>
     </div>
 
     <div class="toast" id="toast"></div>
@@ -1641,6 +1593,8 @@
         function showPage(pageId) {
             document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
             document.getElementById(pageId).classList.add('active');
+            // 进入评价页时初始化
+            if (pageId === 'rating' && typeof initRatingPage === 'function') initRatingPage();
         }
 
         function showToast(message, type = 'info') {
@@ -1739,7 +1693,6 @@
             }
         }
 
-        // confirmReturn 定义在下方异步版本中（带 API 调用），此处已移除旧版
 
         function toggleFamilyMode(checkbox) {
             if (checkbox.checked) {
@@ -1801,7 +1754,29 @@
         function setRating(stars) {
             document.querySelectorAll('.star').forEach((star, i) => star.classList.toggle('active', i < stars));
             const texts = ['非常不满意', '不满意', '一般', '满意', '非常满意'];
-            document.getElementById('ratingText').textContent = stars > 0 ? texts[stars - 1] : '请选择评分';
+            var el = document.getElementById('ratingText');
+            if (el) el.textContent = stars > 0 ? texts[stars - 1] : '';
+        }
+
+        function toggleRatingTag(el) {
+            el.classList.toggle('selected');
+        }
+
+        function initRatingPage() {
+            // 填充就诊信息
+            var deptEl = document.getElementById('ratingDept');
+            var docEl = document.getElementById('ratingDoctor');
+            if (deptEl && appData.appointment) deptEl.textContent = appData.appointment.department || '--';
+            if (docEl && appData.reminder) docEl.textContent = (appData.reminder.doctor || '--') + ' | ' + (appData.reminder.room || '--');
+            // 重置表单
+            var stars = document.getElementById('ratingStars');
+            if (stars) stars.querySelectorAll('.star').forEach(function(s) { s.classList.remove('active'); });
+            var textEl = document.getElementById('ratingText'); if (textEl) textEl.textContent = '';
+            var commentEl = document.getElementById('ratingComment'); if (commentEl) commentEl.value = '';
+            var tags = document.querySelectorAll('.rating-tag.selected');
+            tags.forEach(function(t) { t.classList.remove('selected'); });
+            var success = document.getElementById('ratingSuccess'); if (success) success.style.display = 'none';
+            var btn = document.getElementById('ratingSubmitBtn'); if (btn) { btn.style.display = ''; btn.disabled = false; btn.textContent = '提交评价'; }
         }
 
         function sendMessage() {
@@ -1813,9 +1788,10 @@
 
         async function simulateNfcBind() {
             showToast('正在感应手环...', 'info');
-            const mockRfid = 'ABCDEFGHJKMN' + String(Math.floor(Math.random() * 10));
+            const uid = window.NfcReader ? await NfcReader.readCard()
+                : (window.TEST_UID || (window.DEMO_CARDS && window.DEMO_CARDS[0] && window.DEMO_CARDS[0].uid));
             try {
-                await loadPatientData(mockRfid);
+                await loadPatientData(uid);
                 showToast('手环识别成功！已加载就诊数据', 'success');
             } catch(e) { showToast('手环绑定成功！（演示模式）', 'success'); }
             setTimeout(() => showPage('overview'), 1200);
@@ -1847,11 +1823,21 @@
         function addToCalendar() { showToast('已添加到日历提醒！', 'success'); }
 
         async function submitRating() {
-            var stars = document.querySelectorAll('.star.active').length;
+            var stars = document.querySelectorAll('#ratingStars .star.active').length;
             if (stars === 0) { showToast('请先选择评分', 'info'); return; }
-            try { await PatientService.submitRating({ patientId: PatientSession.getPatientId(), visitId: PatientSession.getVisitId() || 1, score: stars, comment: '' }); } catch(e) {}
-            showToast('感谢您的评价！', 'success');
-            setTimeout(() => showPage('overview'), 1000);
+            var btn = document.getElementById('ratingSubmitBtn');
+            if (btn) { btn.textContent = '提交中...'; btn.disabled = true; }
+
+            var tags = [];
+            document.querySelectorAll('.rating-tag.selected').forEach(function(t) { tags.push(t.textContent); });
+            var comment = document.getElementById('ratingComment')?.value || '';
+
+            try { await PatientService.submitRating({ patientId: PatientSession.getPatientId(), visitId: PatientSession.getVisitId() || 1, score: stars, comment: comment, tags: tags }); } catch(e) {}
+
+            // 显示成功状态
+            if (btn) btn.style.display = 'none';
+            var success = document.getElementById('ratingSuccess');
+            if (success) success.style.display = 'block';
         }
 
         async function bindFamily() {
@@ -1916,19 +1902,14 @@
             showPage('overview');
         }
 
-        async function confirmReturn() {
-            showToast('正在归还手环...', 'info');
-            try { await PatientService.returnBracelet(); } catch(e) {}
-            showToast('手环已归还，感谢您的使用！', 'success');
-            PatientSession.clear();
-            setTimeout(() => showPage('rating'), 1500);
-        }
     </script>
     <script src="/js/api-config.js"></script>
     <script src="js/data.js"></script>
     <script src="js/store.js"></script>
     <script src="js/api-service.js"></script>
     <script src="js/cache.js"></script>
+    <script src="js/demo-cards.js"></script>
+    <script src="js/nfc.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/pages.js"></script>
     <script src="js/main.js"></script>

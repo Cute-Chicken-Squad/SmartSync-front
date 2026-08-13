@@ -49,10 +49,8 @@
                 </div>
                 <div class="header-right">
                     <span class="date-info" id="dateInfo">2026-04-29 14:35:28</span>
-                    <button class="btn primary" id="mainTriageBtn"
-                        onclick="var btn=this;btn.innerHTML='执行中...';btn.disabled=true;setTimeout(function(){btn.innerHTML='执行分流';btn.disabled=false;alert('分流执行成功！');},1500);">执行分流</button>
-                    <button class="btn success" id="exportBtn"
-                        onclick="var btn=this;btn.innerHTML='导出中...';btn.disabled=true;setTimeout(function(){btn.innerHTML='导出报表';btn.disabled=false;alert('报表导出成功！');},1500);">导出报表</button>
+                    <button class="btn primary" id="mainTriageBtn">执行分流</button>
+                    <button class="btn success" id="exportBtn">导出报表</button>
                 </div>
             </header>
 
@@ -172,26 +170,14 @@
                     </div>
                     <div class="preemption-log">
                         <h5>抢占事件记录</h5>
-                        <div class="log-item">
-                            <span class="log-time">14:35</span>
-                            <span class="log-type high">紧急</span>
-                            <span class="log-desc">王大爷触发洗手间求助，原任务临时中断</span>
-                        </div>
-                        <div class="log-item">
-                            <span class="log-time">14:32</span>
-                            <span class="log-type warning">高优</span>
-                            <span class="log-desc">李女士需要轮椅协助，优先队列调整</span>
-                        </div>
-                        <div class="log-item">
-                            <span class="log-time">14:28</span>
-                            <span class="log-type normal">常规</span>
-                            <span class="log-desc">张先生抽血检验完成，回诊召回归队</span>
+                        <div id="preemptLogItems">
+                            <!-- 由 dispatch.js 从 GET /admin/api/dispatch/task-preemption 动态渲染 -->
                         </div>
                     </div>
                 </div>
                 <div class="preemption-stats">
                     <div class="stat-item">
-                        <span class="stat-value">12</span>
+                        <span class="stat-value" id="preemptCount">0</span>
                         <span class="stat-label">今日抢占次数</span>
                     </div>
                     <div class="stat-item">
@@ -213,8 +199,7 @@
             <div class="card">
                 <div class="card-header">
                     <h4 class="card-title">柔性动态分流决策</h4>
-                    <button class="btn primary"
-                        onclick="var btn=this;btn.innerHTML='执行中...';btn.disabled=true;setTimeout(function(){btn.innerHTML='执行分流';btn.disabled=false;alert('分流执行成功！');},1500);">执行分流</button>
+                    <button class="btn primary" id="gridTriageBtn">执行分流</button>
                 </div>
                 <div class="dispatch-grid">
                     <div class="dispatch-metrics">
@@ -233,22 +218,8 @@
                     </div>
                     <div class="dispatch-suggestions">
                         <h5>智能分流建议</h5>
-                        <div class="suggestion-item">
-                            <span class="suggestion-icon">→</span>
-                            <span class="suggestion-text">李女士 (#1056) 从 <strong>检验科</strong> 分流至
-                                <strong>影像科</strong></span>
-                            <span class="suggestion-benefit">预计减少等待 15分钟</span>
-                        </div>
-                        <div class="suggestion-item">
-                            <span class="suggestion-icon">→</span>
-                            <span class="suggestion-text">张先生 (#1034) 从 <strong>内科</strong> 改约至
-                                <strong>内分泌科</strong></span>
-                            <span class="suggestion-benefit">预计减少等待 8分钟</span>
-                        </div>
-                        <div class="suggestion-item">
-                            <span class="suggestion-icon">→</span>
-                            <span class="suggestion-text">王大爷 (#1082) 启用 <strong>优先通道</strong></span>
-                            <span class="suggestion-benefit">轮椅协助已预约</span>
+                        <div class="suggestions-list">
+                            <!-- 由 dispatch.js 从 GET /admin/api/dispatch/suggestions 动态渲染 -->
                         </div>
                     </div>
                 </div>

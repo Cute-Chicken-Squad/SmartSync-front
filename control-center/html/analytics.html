@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>智环引诊 - 数据分析</title>
-    <link rel="stylesheet" href="../css/common.css">
-    <link rel="stylesheet" href="../css/analytics.css">
+    <link rel="stylesheet" href="/control-center/css/common.css">
+    <link rel="stylesheet" href="/control-center/css/analytics.css">
 </head>
 
 <body>
@@ -19,25 +19,25 @@
             </div>
             <ul class="nav-menu">
                 <li class="nav-item">
-                    <a href="index.html" class="nav-link">首页</a>
+                    <a href="/control-center/html/index.html" class="nav-link">首页</a>
                 </li>
                 <li class="nav-item">
-                    <a href="dispatch.html" class="nav-link">调度管理</a>
+                    <a href="/control-center/html/dispatch.html" class="nav-link">调度管理</a>
                 </li>
                 <li class="nav-item">
-                    <a href="bracelet.html" class="nav-link">手环管理</a>
+                    <a href="/control-center/html/bracelet.html" class="nav-link">手环管理</a>
                 </li>
                 <li class="nav-item">
-                    <a href="task-monitor.html" class="nav-link">任务监控</a>
+                    <a href="/control-center/html/task-monitor.html" class="nav-link">任务监控</a>
                 </li>
                 <li class="nav-item">
-                    <a href="emergency.html" class="nav-link">紧急情况</a>
+                    <a href="/control-center/html/emergency.html" class="nav-link">紧急情况</a>
                 </li>
                 <li class="nav-item">
-                    <a href="analytics.html" class="nav-link active">数据分析</a>
+                    <a href="/control-center/html/analytics.html" class="nav-link active">数据分析</a>
                 </li>
                 <li class="nav-item">
-                    <a href="settings.html" class="nav-link">系统设置</a>
+                    <a href="/control-center/html/settings.html" class="nav-link">系统设置</a>
                 </li>
             </ul>
         </aside>
@@ -57,73 +57,52 @@
             </header>
 
             <!-- 筛选区域 -->
-            <div class="filter-bar">
+            <div class="filter-bar" id="filterBar">
                 <div class="filter-group">
                     <span class="filter-label">时间范围:</span>
-                    <select class="filter-select">
-                        <option>今日</option>
-                        <option>本周</option>
-                        <option>本月</option>
-                        <option>自定义</option>
+                    <select class="filter-select" id="filterTimeRange" onchange="onTimeRangeChange()">
+                        <option value="month">本月</option>
+                        <option value="week">本周</option>
+                        <option value="today">今日</option>
+                        <option value="custom">自定义</option>
                     </select>
+                </div>
+                <div class="filter-group" id="customDateGroup" style="display:none;">
+                    <span class="filter-label">起:</span>
+                    <input type="date" class="filter-date" id="filterStartDate" />
+                    <span class="filter-label">止:</span>
+                    <input type="date" class="filter-date" id="filterEndDate" />
                 </div>
                 <div class="filter-group">
                     <span class="filter-label">报告类型:</span>
-                    <select class="filter-select">
-                        <option>就诊统计</option>
-                        <option>科室负载</option>
-                        <option>分流效果</option>
-                        <option>患者满意度</option>
+                    <select class="filter-select" id="filterReportType">
+                        <option value="all">就诊统计</option>
+                        <option value="dept">科室负载</option>
+                        <option value="triage">分流效果</option>
+                        <option value="satisfaction">患者满意度</option>
                     </select>
                 </div>
                 <div class="filter-group">
                     <span class="filter-label">导出格式:</span>
-                    <select class="filter-select">
+                    <select class="filter-select" id="filterExportFormat">
                         <option>Excel</option>
                         <option>PDF</option>
                         <option>CSV</option>
                     </select>
                 </div>
-                <button class="btn" onclick="queryData()">查询</button>
+                <button class="btn" id="btnQuery" onclick="queryData()">查询</button>
+                <button class="btn btn-reset" id="btnReset" onclick="resetFilter()">重置</button>
             </div>
 
             <!-- 月度就诊趋势 -->
             <div class="card">
                 <div class="card-header">
                     <h4 class="card-title">月度就诊趋势</h4>
-                    <span style="font-size: 12px; color: #666;">近30天数据</span>
+                    <span id="monthlyTrendTotal" style="font-size: 12px; color: #666;">加载中...</span>
                 </div>
-                <div class="chart-container">
-                    <div class="chart-y-axis">
-                        <span>1500</span>
-                        <span>1000</span>
-                        <span>500</span>
-                        <span>0</span>
-                    </div>
-                    <div class="line-chart">
-                        <svg viewBox="0 0 800 180" preserveAspectRatio="none">
-                            <defs>
-                                <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                                    <stop offset="0%" stop-color="rgba(66, 133, 244, 0.3)" />
-                                    <stop offset="100%" stop-color="rgba(66, 133, 244, 0)" />
-                                </linearGradient>
-                            </defs>
-                            <path d="M 40,160 Q 100,140 160,150 T 280,120 T 400,100 T 520,110 T 640,130 T 760,140"
-                                fill="none" stroke="#4285f4" stroke-width="2" stroke-linecap="round" />
-                            <path
-                                d="M 40,180 L 40,160 Q 100,140 160,150 T 280,120 T 400,100 T 520,110 T 640,130 T 760,140 L 760,180 Z"
-                                fill="url(#areaGradient)" />
-                            <circle cx="400" cy="100" r="4" fill="#4285f4" />
-                            <circle cx="520" cy="110" r="4" fill="#4285f4" />
-                            <circle cx="640" cy="130" r="4" fill="#4285f4" />
-                        </svg>
-                    </div>
-                    <div class="chart-x-axis">
-                        <span>04-01</span>
-                        <span>04-10</span>
-                        <span>04-20</span>
-                        <span>04-30</span>
-                    </div>
+                <div class="chart-container" id="monthlyTrendChart">
+                    <div class="chart-y-axis" id="chartYAxis"></div>
+                    <div class="bar-chart" id="monthlyBars"></div>
                 </div>
             </div>
 
@@ -134,33 +113,9 @@
                     <div class="card-header">
                         <h4 class="card-title">科室就诊量排行</h4>
                     </div>
-                    <div class="chart-container">
-                        <div class="bar-chart">
-                            <div class="bar-item">
-                                <span class="bar-value">156</span>
-                                <div class="bar" style="height: 110px;"></div>
-                                <span class="bar-label">检验科</span>
-                            </div>
-                            <div class="bar-item">
-                                <span class="bar-value">142</span>
-                                <div class="bar" style="height: 100px;"></div>
-                                <span class="bar-label">影像科</span>
-                            </div>
-                            <div class="bar-item">
-                                <span class="bar-value">98</span>
-                                <div class="bar" style="height: 70px;"></div>
-                                <span class="bar-label">心内科</span>
-                            </div>
-                            <div class="bar-item">
-                                <span class="bar-value">76</span>
-                                <div class="bar" style="height: 55px;"></div>
-                                <span class="bar-label">内分泌</span>
-                            </div>
-                            <div class="bar-item">
-                                <span class="bar-value">54</span>
-                                <div class="bar" style="height: 40px;"></div>
-                                <span class="bar-label">消化科</span>
-                            </div>
+                    <div class="rank-container" id="deptRankingChart">
+                        <div class="rank-list" id="deptRankingList">
+                            <div style="text-align:center;padding:40px;color:#999;">加载中...</div>
                         </div>
                     </div>
                 </div>
@@ -170,47 +125,8 @@
                     <div class="card-header">
                         <h4 class="card-title">患者满意度分布</h4>
                     </div>
-                    <div class="chart-container" style="height: auto;">
-                        <div class="pie-chart">
-                            <svg width="180" height="180" viewBox="0 0 200 200">
-                                <circle cx="100" cy="100" r="70" fill="#f0f7ff" />
-                                <circle cx="100" cy="100" r="70" fill="none" stroke="#5BA0E6" stroke-width="28"
-                                    stroke-dasharray="198 440" transform="rotate(-90 100 100)" />
-                                <circle cx="100" cy="100" r="70" fill="none" stroke="#5BCFA0" stroke-width="28"
-                                    stroke-dasharray="97 440" stroke-dashoffset="-198"
-                                    transform="rotate(-90 100 100)" />
-                                <circle cx="100" cy="100" r="70" fill="none" stroke="#F0D490" stroke-width="28"
-                                    stroke-dasharray="53 440" stroke-dashoffset="-295"
-                                    transform="rotate(-90 100 100)" />
-                                <circle cx="100" cy="100" r="70" fill="none" stroke="#F0AFAF" stroke-width="28"
-                                    stroke-dasharray="22 440" stroke-dashoffset="-348"
-                                    transform="rotate(-90 100 100)" />
-                                <text x="100" y="95" text-anchor="middle" font-size="14" font-weight="600">87%</text>
-                                <text x="100" y="115" text-anchor="middle" font-size="11" fill="#666">满意度</text>
-                            </svg>
-                            <div class="pie-legend">
-                                <div class="legend-item">
-                                    <span class="legend-color" style="background: #5BA0E6;"></span>
-                                    <span class="legend-label">非常满意</span>
-                                    <span class="legend-value">45%</span>
-                                </div>
-                                <div class="legend-item">
-                                    <span class="legend-color" style="background: #5BCFA0;"></span>
-                                    <span class="legend-label">满意</span>
-                                    <span class="legend-value">22%</span>
-                                </div>
-                                <div class="legend-item">
-                                    <span class="legend-color" style="background: #F0D490;"></span>
-                                    <span class="legend-label">一般</span>
-                                    <span class="legend-value">12%</span>
-                                </div>
-                                <div class="legend-item">
-                                    <span class="legend-color" style="background: #F0AFAF;"></span>
-                                    <span class="legend-label">不满意</span>
-                                    <span class="legend-value">5%</span>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="satisfaction-container" id="satisfactionChart">
+                        <div class="pie-legend" id="satisfactionLegend" style="text-align:center;padding:40px;color:#999;">加载中...</div>
                     </div>
                 </div>
             </div>
@@ -231,42 +147,8 @@
                                 <th>环比变化</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr>
-                                <td>04-29</td>
-                                <td>12,456</td>
-                                <td>47分钟</td>
-                                <td>87%</td>
-                                <td><span class="trend-up">+2.4%</span></td>
-                            </tr>
-                            <tr>
-                                <td>04-28</td>
-                                <td>12,163</td>
-                                <td>53分钟</td>
-                                <td>85%</td>
-                                <td><span class="trend-up">+1.2%</span></td>
-                            </tr>
-                            <tr>
-                                <td>04-27</td>
-                                <td>12,019</td>
-                                <td>51分钟</td>
-                                <td>86%</td>
-                                <td><span class="trend-down">-0.8%</span></td>
-                            </tr>
-                            <tr>
-                                <td>04-26</td>
-                                <td>12,116</td>
-                                <td>49分钟</td>
-                                <td>88%</td>
-                                <td><span class="trend-up">+3.1%</span></td>
-                            </tr>
-                            <tr>
-                                <td>04-25</td>
-                                <td>11,750</td>
-                                <td>55分钟</td>
-                                <td>85%</td>
-                                <td><span class="trend-down">-2.2%</span></td>
-                            </tr>
+                        <tbody id="detailTableBody">
+                            <tr><td colspan="5" style="text-align:center;color:#999;padding:20px;">加载中...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -276,7 +158,7 @@
 
     <script src="/js/api-config.js"></script>
     <script src="/js/mock-data.js"></script>
-    <script src="../js/analytics.js"></script>
+    <script src="/control-center/js/analytics.js"></script>
 </body>
 
 </html>

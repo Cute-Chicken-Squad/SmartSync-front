@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     // 时钟
     setInterval(function () {
         var date = new Date();
-        var timeString = date.toISOString().replace('T', ' ').substring(0, 19);
+        var timeString = formatLocalDateTime(date);
         document.getElementById('dateInfo').textContent = timeString;
     }, 1000);
 
@@ -88,19 +88,21 @@ function updateSummaryStats(deptList) {
 
 // ===================== 写操作 =====================
 
-async function exportData() {
-    var btn = event.target;
+async function exportData(evt) {
+    var btn = (evt && evt.target) || document.querySelector('#exportDataBtn');
+    if (!btn) { console.error('[负载] 导出按钮未找到'); return; }
     btn.innerHTML = '导出中...';
     btn.disabled = true;
     try {
-        const blob = await adminApi.exportDispatchReport();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
+        var result = await adminApi.exportDispatchReport();
+        var blob = result instanceof Blob ? result : (result instanceof Response ? await result.blob() : new Blob([JSON.stringify(result)], { type: 'text/csv' }));
+        var url = window.URL.createObjectURL(blob);
+        var a = document.createElement('a');
         a.href = url;
         a.download = 'dept_load_report.csv';
         a.click();
         window.URL.revokeObjectURL(url);
-        alert('科室负载数据导出成功 ✅');
+        alert('科室负载数据导出成功');
     } catch (e) {
         console.error('[负载详情] 导出失败:', e.message);
         alert('导出失败: ' + e.message);

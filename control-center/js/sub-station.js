@@ -51,6 +51,7 @@ async function simulateBraceletTap() {
         const res = await businessApi.substationDetect(STATION_ID, 'SIMULATED_NFC_ID');
         if (res.code === 200 && res.data) {
             currentPatient = {
+                patientId: res.data.patientId || null,
                 name: res.data.patientName || '未知患者',
                 maskedId: res.data.maskedId || 'PAT-UNKNOWN',
                 dept: res.data.dept || '',
@@ -236,3 +237,92 @@ function startAutoDemo() {
 function manualTrigger() { simulateBraceletTap(); }
 
 window.addEventListener('blur', () => { if (isRecording) stopRecording(); });
+
+// ===================== 紧急求助（写操作 → 后端 → 总站弹窗） =====================
+
+/**
+ * BigInt 安全获取一个精确的 patientId 字符串。
+ * patientId 是 19 位数字，超出 JS Number.MAX_SAFE_INTEGER，JSON.parse 会舍入导致后端 404。
+ * 后端接受字符串形式的 patientId，故从原始响应文本提取精确 id。
+ */
+async function getExactPatientId() {
+    try {
+        const token = TokenStore.getPatientToken() || TokenStore.getBizToken();
+        const resp = await fetch('/api/patient/page?current=1&size=1', {
+            headers: token ? { 'Authorization': 'Bearer ' + token } : {},
+        });
+        const text = await resp.text();
+        const m = text.match(/"records":\[\{"id":(\d{15,20})/);
+        return m ? m[1] : null;
+    } catch (e) {
+        console.warn('[子站] 获取精确 patientId 失败:', e.message);
+        return null;
+    }
+}
+
+/**
+ * 子站点击紧急求助 → POST /api/emergency → 总站 SSE 实时检测到新警报并弹窗
+ */
+async function sendEmergencyHelp() {
+    const btn = document.getElementById('sosBtn');
+    if (!btn) return;
+    if (btn.disabled) return; // 防重复点击
+
+    btn.disabled = true;
+    const originalHtml = btn.innerHTML;
+    btn.innerHTML = '<span class="sos-icon">⏳</span><span>发送中</span>';
+
+    try {
+        // 0) 确保认证就绪（管理端 token + 业务端终端 token，否则写操作会 401）
+        await ensureAuth();
+
+        // 1) 精确获取 patientId（BigInt 安全，字符串形式；后端要求必填）
+        const patientId = await getExactPatientId();
+
+        const location = (currentPatient && currentPatient.stationLocation)
+            || document.getElementById('stationLocation').textContent
+            || '1F-电梯厅';
+
+        // 3) 真实写入后端
+        const res = await businessApi.sendEmergency({
+            patientId: patientId,
+            location: location,
+            type: 'emergency',
+            description: '子站发起紧急求助',
+        });
+
+        console.log('[子站] 紧急求助已发送:', res);
+
+        // 4) 本地广播（同机多标签页即时联动，双保险）
+        notifyControlCenter({
+            type: 'EMERGENCY_ALARM',
+            patientId: patientId,
+            patientName: (currentPatient && currentPatient.name) || '未知患者',
+            location: location,
+            stationId: STATION_ID,
+            timestamp: new Date().toISOString(),
+        });
+
+        // 5) UI 反馈
+        if (res && res.code === 200) {
+            btn.innerHTML = '<span class="sos-icon">✓</span><span>已发送</span>';
+            setTimeout(() => { btn.innerHTML = originalHtml; btn.disabled = false; }, 2500);
+        } else {
+            throw new Error((res && res.message) || '后端返回异常');
+        }
+    } catch (e) {
+        console.error('[子站] 紧急求助发送失败:', e.message);
+        // 即使后端失败，也通过 localStorage 通知总站（演示兜底）
+        notifyControlCenter({
+            type: 'EMERGENCY_ALARM',
+            patientName: (currentPatient && currentPatient.name) || '未知患者',
+            location: document.getElementById('stationLocation').textContent || '1F-电梯厅',
+            stationId: STATION_ID,
+            timestamp: new Date().toISOString(),
+            fallback: true,
+        });
+        btn.innerHTML = '<span class="sos-icon">!</span><span>重试</span>';
+        setTimeout(() => { btn.innerHTML = originalHtml; btn.disabled = false; }, 2000);
+        alert('求助发送失败：' + e.message);
+    }
+}

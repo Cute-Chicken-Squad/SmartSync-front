@@ -66,10 +66,24 @@ const appData = {
 async function loadPatientData(rfid) {
     Toast.info('正在加载就诊数据...');
 
-    // Step 1: NFC 检测 + 患者登录
+    // ── 本地映射（离线兜底，确定性，去随机化核心） ──
+    // 有新刷卡 UID 时严格按 UID 匹配；无 UID（如刷新页面）才用上次缓存卡
+    const card = resolveDemoCard(rfid) || (!rfid ? getCachedCard() : null);
+    if (card) {
+        window._demoCard = card;
+        _navState.routeData = card.route;
+        _navState.toNodeId = card.dept;
+        // 先用本地卡填充患者信息，真实 API 成功后再覆盖
+        appData.patient = { name: card.name, id: '#' + String(card.patientId || '').slice(-4), gender: card.gender, age: card.age };
+        appData.appointment = { department: card.dept, floor: card.floor, time: appData.appointment.time, waitTime: appData.appointment.waitTime };
+        appData._source = 'local';
+        PatientSession.set({ patientId: card.patientId, patientName: card.name, nfcId: rfid || card.uid });
+    }
+
+    // Step 1: NFC 检测（真实后端预留接口，失败降级本地卡）
     let nfcInfo = null;
     if (rfid) {
-        nfcInfo = await PatientService.nfcDetect(rfid);
+        try { nfcInfo = await PatientService.nfcDetect(rfid); } catch (e) { nfcInfo = null; }
         if (nfcInfo) {
             PatientSession.set({ patientId: nfcInfo.patientId, patientName: nfcInfo.patientName, nfcId: rfid });
         }
@@ -125,8 +139,8 @@ async function loadPatientData(rfid) {
         Logger.log('数据加载完成 (API)');
         Toast.success('数据加载完成');
     } else {
-        Logger.log('API 数据加载失败，使用默认值');
-        Toast.info('使用演示数据');
+        Logger.log(card ? 'API 数据加载失败，使用本地卡片' : 'API 数据加载失败，使用默认值');
+        Toast.info(card ? ('已识别：' + card.name + ' · ' + card.dept) : '使用演示数据');
     }
 
     appData._loaded = true;
@@ -185,7 +199,6 @@ function showPage(pageId) {
         targetPage.classList.add('active');
         currentPageId = pageId;
         updateNavigation(pageId);
-        if (typeof toggleBottomNav === 'function') toggleBottomNav(pageId);
         if (typeof updateNavHighlight === 'function') updateNavHighlight(pageId);
         window.scrollTo({ top: 0, behavior: 'smooth' });
         if (appData._loaded) { bindData(); renderProgress(); renderReports(); }
@@ -262,18 +275,32 @@ function showToast(message, type = 'info', duration = 3000) {
 // ===================== NFC 手环感应（核心入口） =====================
 
 async function simulateNfcBind() {
-    showToast('正在感应手环...', 'info');
     const btn = event?.target;
     if (btn) { btn.disabled = true; }
 
-    // 模拟 RFID 读取
-    const mockRfid = 'ABCDEFGHJKMN' + String(Math.floor(Math.random() * 10));
+    // 真机 Web NFC 优先 + 测试 UID 降级（不再随机生成 UID）
+    let uid = null;
+    if (window.NfcReader) {
+        uid = await NfcReader.readCard();
+    } else {
+        uid = window.TEST_UID || (window.DEMO_CARDS && window.DEMO_CARDS[0] && window.DEMO_CARDS[0].uid);
+    }
 
+    if (!uid) {
+        showToast('未读到卡片，请重试', 'info');
+        if (btn) { btn.disabled = false; }
+        return;
+    }
+
+    showToast('正在感应手环...', 'info');
     try {
-        await loadPatientData(mockRfid);
+        await loadPatientData(uid);
         if (appData._source === 'api') {
             showToast('手环识别成功！已加载就诊数据', 'success');
             speak('手环识别成功，欢迎' + appData.patient.name);
+        } else if (window._demoCard) {
+            showToast('已识别：' + window._demoCard.name + ' · ' + window._demoCard.dept, 'success');
+            speak('欢迎' + window._demoCard.name);
         } else {
             showToast('手环已绑定（演示模式）', 'success');
         }
@@ -284,6 +311,39 @@ async function simulateNfcBind() {
     if (btn) { btn.disabled = false; }
     setTimeout(() => showPage('overview'), 1200);
 }
+
+/** 刷卡状态可视化（配合 nfc-status 元素） */
+function renderScanStatus(state) {
+    const el = document.getElementById('nfcStatus');
+    if (!el) return;
+    const map = {
+        scanning: { text: '正在读取卡片…', cls: 'scanning' },
+        success: { text: '读取成功', cls: 'success' },
+        fail: { text: '读取失败，请重试', cls: 'fail' },
+        unsupported: { text: '当前环境不支持 NFC，已使用测试卡', cls: 'unsupported' },
+    };
+    const s = map[state] || map.scanning;
+    el.textContent = s.text;
+    el.className = 'nfc-status ' + s.cls;
+}
+
+// 将 NFC 读卡状态接入可视化反馈
+if (window.NfcReader) {
+    NfcReader.onStatus = (state) => renderScanStatus(state);
+}
+window.renderScanStatus = renderScanStatus;
+
+/** 测试 UID 选择器切换（无实体卡联调） */
+function onTestUidChange(value) {
+    window.TEST_UID = value || null;
+    if (value) {
+        const card = resolveDemoCard(value);
+        showToast('测试卡已切换：' + (card ? (card.name + ' · ' + card.dept) : value), 'info');
+    } else {
+        showToast('已切换为默认测试卡', 'info');
+    }
+}
+window.onTestUidChange = onTestUidChange;
 
 // ===================== 语音播报 =====================
 
@@ -407,15 +467,6 @@ async function submitRating() {
     setTimeout(() => showPage('overview'), 1000);
 }
 
-async function confirmReturn() {
-    showToast('正在归还手环...', 'info');
-    try {
-        await PatientService.returnBracelet();
-    } catch (e) { /* fallback */ }
-    showToast('手环已归还，感谢您的使用！', 'success');
-    PatientSession.clear();
-    setTimeout(() => showPage('rating'), 1500);
-}
 
 async function bindFamily() {
     showToast('正在绑定家人手环...', 'info');
@@ -591,6 +642,18 @@ async function loadNavigationRoute() {
     }
 
     try {
+        // 优先使用刷卡已绑定的固定路线（来自 UID，去随机化）
+        if (_navState.routeData && window._demoCard) {
+            renderNavigationPage(_navState.routeData, {
+                taskName: window._demoCard.dept,
+                floor: window._demoCard.floor,
+                department: window._demoCard.dept,
+            });
+            showToast('导航已开始，请按路线前行', 'success');
+            speak('导航已开始，预计' + (_navState.routeData.duration || '5') + '分钟到达');
+            return;
+        }
+
         // 获取当前任务
         console.log('[导航] 正在获取当前任务...');
         const task = await PatientService.getCurrentTask();
@@ -660,6 +723,17 @@ async function startNavigation() {
     showToast('正在规划路线...', 'info');
 
     try {
+        // 优先使用刷卡已绑定的固定路线（来自 UID，去随机化）
+        if (_navState.routeData && window._demoCard) {
+            renderNavigationPage(_navState.routeData, {
+                taskName: window._demoCard.dept,
+                floor: window._demoCard.floor,
+                department: window._demoCard.dept,
+            });
+            showPage('navigation');
+            return;
+        }
+
         // Step 1: 获取当前任务信息（含目标科室、楼层、房间）
         const task = await PatientService.getCurrentTask();
         if (!task) {
@@ -775,13 +849,6 @@ function renderNavigationPage(route, task) {
     }
 }
 
-    // 更新达到按钮为数据驱动的回调
-    const arriveBtn = page.querySelector('.btn-block');
-    if (arriveBtn) {
-        arriveBtn.onclick = arriveDestination;
-    }
-}
-
 async function callFamily(familyId) {
     showToast('正在获取家人信息...', 'info');
     try {
@@ -809,7 +876,9 @@ async function selectPatient() {
     Skeleton.show('.appointment-card', 'card');
     Skeleton.show('.progress-timeline', 'progress');
 
-    await loadPatientData().catch(() => {});
+    const uid = window.NfcReader ? await NfcReader.readCard()
+        : (window.TEST_UID || (window.DEMO_CARDS && window.DEMO_CARDS[0] && window.DEMO_CARDS[0].uid));
+    await loadPatientData(uid).catch(() => {});
     Skeleton.hide('.patient-card');
     Skeleton.hide('.appointment-card');
     Skeleton.hide('.progress-timeline');
@@ -820,7 +889,6 @@ async function selectPatient() {
         await navigateTo('overview');
     } else if (typeof PageTransition !== 'undefined') {
         await PageTransition.go('overview');
-        if (typeof toggleBottomNav === 'function') toggleBottomNav('overview');
     } else {
         showPage('overview');
     }
@@ -1072,7 +1140,6 @@ window.toggleHighContrast = toggleHighContrast;
 window.toggleFamilyMode = toggleFamilyMode;
 window.viewFamilyProgress = viewFamilyProgress;
 window.callFamily = callFamily;
-window.confirmReturn = confirmReturn;
 window.selectPatient = selectPatient;
 window.selectFamily = selectFamily;
 window.loadNavigationRoute = loadNavigationRoute;

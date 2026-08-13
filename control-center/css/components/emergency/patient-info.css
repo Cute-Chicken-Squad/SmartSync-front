@@ -1,13 +1,13 @@
 .patient-info {
     display: flex;
     align-items: center;
-    gap: 16px;
-    margin-bottom: 20px;
+    gap: 12px;
+    margin-bottom: 16px;
 }
 
 .patient-avatar {
-    width: 56px;
-    height: 56px;
+    width: 48px;
+    height: 48px;
     background: linear-gradient(135deg, #5c7cfa, #4c6ef5);
     border-radius: 50%;
 }
@@ -19,7 +19,7 @@
 }
 
 .patient-name {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 600;
     color: #212529;
 }
@@ -32,17 +32,17 @@
 .info-row {
     display: flex;
     justify-content: space-between;
-    padding: 12px 0;
+    padding: 10px 0;
     border-bottom: 1px solid #f1f3f5;
 }
 
 .info-label {
-    font-size: 13px;
+    font-size: 12px;
     color: #868e96;
 }
 
 .info-value {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 500;
     color: #495057;
 }

@@ -130,8 +130,11 @@
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">子站终端管理</h3>
-                    <button class="btn" style="font-size: 12px; padding: 6px 12px;"
-                        onclick="addSubstation()">添加子站</button>
+                    <div style="display:flex;align-items:center;gap:12px;">
+                        <input type="text" class="form-input" id="substationSearch" placeholder="搜索终端编码或名称..."
+                            style="width:200px;padding:6px 10px;font-size:12px;" oninput="filterSubstations()">
+                        <button class="btn btn-sm btn-primary" onclick="addSubstation()">添加子站</button>
+                    </div>
                 </div>
                 <div class="table-container">
                     <table class="data-table">
@@ -139,86 +142,24 @@
                             <tr>
                                 <th>终端编码</th>
                                 <th>终端名称</th>
+                                <th>位置</th>
                                 <th>状态</th>
+                                <th>信号</th>
                                 <th>创建时间</th>
                                 <th>操作</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr>
-                                <td>SUB-1F-01</td>
-                                <td>1F-门诊大厅</td>
-                                <td><span class="badge badge-success">启用</span></td>
-                                <td>2026-04-01</td>
-                                <td>
-                                    <button class="btn-sm" onclick="restartSubstation('SUB-1F-01')">重启</button>
-                                    <button class="btn-sm" onclick="editSubstation('SUB-1F-01')">编辑</button>
-                                    <button class="btn-sm btn-danger" onclick="deleteSubstation('SUB-1F-01')">删除</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>SUB-1F-02</td>
-                                <td>1F-电梯厅</td>
-                                <td><span class="badge badge-success">启用</span></td>
-                                <td>2026-04-01</td>
-                                <td>
-                                    <button class="btn-sm" onclick="restartSubstation('SUB-1F-02')">重启</button>
-                                    <button class="btn-sm" onclick="editSubstation('SUB-1F-02')">编辑</button>
-                                    <button class="btn-sm btn-danger" onclick="deleteSubstation('SUB-1F-02')">删除</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>SUB-2F-01</td>
-                                <td>2F-走廊北</td>
-                                <td><span class="badge badge-success">启用</span></td>
-                                <td>2026-04-02</td>
-                                <td>
-                                    <button class="btn-sm" onclick="restartSubstation('SUB-2F-01')">重启</button>
-                                    <button class="btn-sm" onclick="editSubstation('SUB-2F-01')">编辑</button>
-                                    <button class="btn-sm btn-danger" onclick="deleteSubstation('SUB-2F-01')">删除</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>SUB-2F-02</td>
-                                <td>2F-检验科</td>
-                                <td><span class="badge badge-success">启用</span></td>
-                                <td>2026-04-02</td>
-                                <td>
-                                    <button class="btn-sm" onclick="restartSubstation('SUB-2F-02')">重启</button>
-                                    <button class="btn-sm" onclick="editSubstation('SUB-2F-02')">编辑</button>
-                                    <button class="btn-sm btn-danger" onclick="deleteSubstation('SUB-2F-02')">删除</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>SUB-3F-01</td>
-                                <td>3F-心内科</td>
-                                <td><span class="badge badge-warning">待审核</span></td>
-                                <td>2026-04-03</td>
-                                <td>
-                                    <button class="btn-sm" onclick="restartSubstation('SUB-3F-01')">重启</button>
-                                    <button class="btn-sm" onclick="editSubstation('SUB-3F-01')">编辑</button>
-                                    <button class="btn-sm btn-danger" onclick="deleteSubstation('SUB-3F-01')">删除</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>SUB-3F-02</td>
-                                <td>3F-影像科</td>
-                                <td><span class="badge badge-success">启用</span></td>
-                                <td>2026-04-03</td>
-                                <td>
-                                    <button class="btn-sm" onclick="restartSubstation('SUB-3F-02')">重启</button>
-                                    <button class="btn-sm" onclick="editSubstation('SUB-3F-02')">编辑</button>
-                                    <button class="btn-sm btn-danger" onclick="deleteSubstation('SUB-3F-02')">删除</button>
-                                </td>
-                            </tr>
+                        <tbody id="substationTableBody">
+                            <tr><td colspan="7" style="text-align:center;padding:20px;color:#959BA3;">加载中...</td></tr>
                         </tbody>
                     </table>
                 </div>
                 <div class="card-footer">
-                    <div class="summary-stats">
-                        <span>总计：6 台终端</span>
-                        <span>启用：5 台</span>
-                        <span>待审核：1 台</span>
+                    <div class="summary-stats" id="substationSummary">
+                        <span>总计：--</span>
+                        <span class="stat-online">在线：--</span>
+                        <span class="stat-offline">离线：--</span>
+                        <span class="stat-pending">待审核：--</span>
                     </div>
                 </div>
             </div>

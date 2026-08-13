@@ -1,33 +1,36 @@
+/* 实时警报列表 - 仿任务监控扁平化设计（无边框，无阴影） */
+
 .alarm-list {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
 }
 
 .alarm-item {
     background: #f8f9fa;
     border-radius: 10px;
-    padding: 16px;
+    padding: 12px 14px;
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
     transition: all 0.25s ease;
-    border: 1px solid #f1f3f5;
 }
 
 .alarm-item:hover {
-    background: #fff;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    background: #f1f3f5;
+    transform: translateX(2px);
 }
 
 .alarm-item.danger {
     background: #fff5f5;
-    border-color: #fff5f5;
+}
+
+.alarm-item.danger:hover {
+    background: #ffe3e3;
 }
 
 .alarm-item.success {
     background: #f8fff9;
-    border-color: #f8fff9;
 }
 
 .alarm-info {
@@ -37,33 +40,33 @@
 .alarm-content {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 3px;
 }
 
 .alarm-time {
-    font-size: 11px;
+    font-size: 10px;
     color: #adb5bd;
 }
 
 .alarm-location {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     color: #495057;
 }
 
 .alarm-desc {
-    font-size: 12px;
+    font-size: 11px;
     color: #868e96;
 }
 
 .alarm-actions {
     display: flex;
-    gap: 10px;
+    gap: 8px;
     margin-left: 16px;
 }
 
 .alarm-btn {
-    padding: 8px 14px;
+    padding: 6px 12px;
     border: none;
     border-radius: 6px;
     font-size: 12px;

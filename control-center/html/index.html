@@ -7,6 +7,7 @@
     <title>智环引诊 - 云端调度中心</title>
     <link rel="stylesheet" href="../css/common.css">
     <link rel="stylesheet" href="../css/index.css">
+    <script src="/digital-twin/js/vendor/three-r160.min.js"></script>
 </head>
 
 <body>
@@ -87,7 +88,31 @@
                 <div class="content-card full-width">
                     <div class="card-header">
                         <h3 class="card-title">院区数字孪生</h3>
-                        <a href="#" class="card-more">更多 ›</a>
+                        <a href="/digital-twin/index.html" class="card-more">完整视图 ›</a>
+                    </div>
+                    <div class="area-twin-preview" id="twinPreviewWrapper">
+                        <div id="twinPreviewCanvas" class="twin-preview-canvas"
+                            onclick="window.location.href='/digital-twin/index.html'" title="点击进入完整数字孪生视图"></div>
+                        <div class="twin-overlay-info">
+                            <div class="twin-stats">
+                                <span class="stat-item">
+                                    <span class="stat-label">楼层</span>
+                                    <span class="stat-value" id="previewFloor">F1</span>
+                                </span>
+                                <span class="stat-item">
+                                    <span class="stat-label">科室</span>
+                                    <span class="stat-value" id="previewDeptCount">52</span>
+                                </span>
+                                <span class="stat-item">
+                                    <span class="stat-label">在院患者</span>
+                                    <span class="stat-value" id="previewPatientCount">30</span>
+                                </span>
+                                <span class="stat-item">
+                                    <span class="stat-label">子站在线</span>
+                                    <span class="stat-value success" id="previewSubOnline">24/28</span>
+                                </span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -185,7 +210,7 @@
                         <h3 class="card-title">患者来源分布</h3>
                     </div>
                     <div class="source-content">
-                        <div class="source-pie">
+                        <div class="source-pie" id="sourcePie">
                             <svg width="200" height="200" viewBox="0 0 200 200">
                                 <circle cx="100" cy="100" r="55" fill="none" />
                                 <circle cx="100" cy="100" r="80" fill="none" stroke="#5BA0E6" stroke-width="25"
@@ -204,7 +229,7 @@
                                 <text x="100" y="115" text-anchor="middle" font-size="12" fill="#868e96">今日总量</text>
                             </svg>
                         </div>
-                        <div class="source-legend">
+                        <div class="source-legend" id="sourceLegend">
                             <div class="legend-item">
                                 <span class="legend-color" style="background: #5BA0E6;"></span>
                                 <span class="legend-label">主城区</span>
@@ -236,14 +261,14 @@
                     <h3 class="card-title">24小时流量趋势</h3>
                 </div>
                 <div class="trend-chart line-chart">
-                    <div class="trend-y-axis">
+                    <div class="trend-y-axis" id="trafficYAxis">
                         <span>300</span>
                         <span>200</span>
                         <span>100</span>
                         <span>0</span>
                     </div>
                     <div class="line-container">
-                        <svg class="line-chart-svg" width="100%" height="100%" viewBox="0 0 800 200">
+                        <svg class="line-chart-svg" id="trafficChart" width="100%" height="100%" viewBox="0 0 800 200">
                             <defs>
                                 <linearGradient id="lineGradient" x1="0%" y1="0%" x2="0%" y2="100%">
                                     <stop offset="0%" stop-color="rgba(66, 133, 244, 0.3)" />
@@ -289,11 +314,11 @@
                         <div class="status-items">
                             <div class="status-item">
                                 <span class="item-label">在线子站</span>
-                                <span class="item-value success">24/28</span>
+                                <span class="item-value success" id="sysSubOnline">24/28</span>
                             </div>
                             <div class="status-item">
                                 <span class="item-label">离线子站</span>
-                                <span class="item-value danger">4</span>
+                                <span class="item-value danger" id="sysSubOffline">4</span>
                             </div>
                             <div class="status-item">
                                 <span class="item-label">网络延迟</span>
@@ -323,15 +348,15 @@
                         <div class="status-items">
                             <div class="status-item">
                                 <span class="item-label">NFC设备</span>
-                                <span class="item-value success">28台</span>
+                                <span class="item-value success" id="sysNfcDevices">28台</span>
                             </div>
                             <div class="status-item">
                                 <span class="item-label">语音设备</span>
-                                <span class="item-value success">28台</span>
+                                <span class="item-value success" id="sysVoiceDevices">28台</span>
                             </div>
                             <div class="status-item">
                                 <span class="item-label">待维护</span>
-                                <span class="item-value warning">2台</span>
+                                <span class="item-value warning" id="sysPendingMaintenance">2台</span>
                             </div>
                         </div>
                     </div>
@@ -342,7 +367,9 @@
 
     <script src="/js/api-config.js"></script>
     <script src="/js/mock-data.js"></script>
+    <script src="../js/alarm-realtime.js"></script>
     <script src="../js/index.js"></script>
+    <script src="/control-center/js/digital-twin-preview.js"></script>
 </body>
 
 </html>

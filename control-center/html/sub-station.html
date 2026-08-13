@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>智环引诊 - 引导子站</title>
-    <link rel="stylesheet" href="../css/common.css">
-    <link rel="stylesheet" href="../css/sub-station.css">
+    <link rel="stylesheet" href="/control-center/css/common.css">
+    <link rel="stylesheet" href="/control-center/css/sub-station.css">
 </head>
 
 <body>
@@ -175,11 +175,17 @@
                 <span class="footer-value" id="stationLocation">1F-电梯厅</span>
             </div>
         </footer>
+
+        <!-- 紧急求助按钮（固定悬浮） -->
+        <button class="sos-btn" id="sosBtn" onclick="sendEmergencyHelp()">
+            <span class="sos-icon">🆘</span>
+            <span>紧急求助</span>
+        </button>
     </div>
 
     <script src="/js/api-config.js"></script>
     <script src="/js/mock-data.js"></script>
-    <script src="../js/sub-station.js"></script>
+    <script src="/control-center/js/sub-station.js"></script>
 </body>
 
 </html>

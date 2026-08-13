@@ -8,7 +8,7 @@ class OptimizedTwinEngine {
         const el = document.getElementById(containerId);
         if (!el) return;
         this.container = el;
-        this.dataPath = options.dataPath || '../../digital-twin/JJI54559656769/';
+        this.dataPath = options.dataPath || '/digital-twin/data/hospital_f1/';
         this.cadData = null;
         this.nodeData = null;
         this.floorTex = null;
@@ -73,13 +73,13 @@ class OptimizedTwinEngine {
         // 底图参考纹理
         try {
             this.floorTex = await new Promise((res, rej) => {
-                new THREE.TextureLoader().load(this.dataPath + 'map.jpg', res, undefined, () => rej());
+                new THREE.TextureLoader().load(this.dataPath + 'floor_plan.jpg', res, undefined, () => rej());
             });
             this.floorTex.colorSpace = THREE.SRGBColorSpace;
             console.log('底图加载成功');
         } catch (e) { console.warn('底图加载跳过'); }
         try {
-            const r = await fetch(this.dataPath + '../nodes_f1.json');
+            const r = await fetch(this.dataPath + 'nodes_f1.json');
             if (r.ok) this.nodeData = await r.json();
         } catch (e) { /* ok */ }
         if (!this.cadData) {

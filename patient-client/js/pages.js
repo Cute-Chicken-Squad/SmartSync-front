@@ -70,15 +70,19 @@ const BOTTOM_NAV_STYLE = `
 /** 需要显示底部导航的页面 */
 const NAV_PAGES = new Set(['overview', 'reports', 'reminder', 'profile']);
 
-/** 渲染底部导航（仅首次调用），默认隐藏 */
+/** 渲染底部导航（仅首次调用） */
 function ensureBottomNav() {
-    if (document.getElementById('bottomNav')) return;
-    document.head.insertAdjacentHTML('beforeend', BOTTOM_NAV_STYLE);
-    document.querySelector('.app-wrapper')?.insertAdjacentHTML('beforeend', BOTTOM_NAV_HTML);
-
     const nav = document.getElementById('bottomNav');
-    // 初始隐藏（home 页不需要导航）
-    nav.style.display = 'none';
+    if (!nav) {
+        // 备选：动态创建
+        document.head.insertAdjacentHTML('beforeend', BOTTOM_NAV_STYLE);
+        document.querySelector('.app-wrapper')?.insertAdjacentHTML('beforeend', BOTTOM_NAV_HTML);
+        return;
+    }
+
+    // 防止重复绑定 (使用 data-bound 标记)
+    if (nav.dataset.bound) return;
+    nav.dataset.bound = '1';
 
     // 绑定点击事件
     nav.addEventListener('click', (e) => {
@@ -86,26 +90,16 @@ function ensureBottomNav() {
         if (!item) return;
         const pageId = item.dataset.page;
         if (pageId) {
-            Device.haptic('light');
+            if (typeof Device !== 'undefined' && Device.haptic) Device.haptic('light');
             showPage(pageId);
         }
     });
 }
 
-/** 根据当前页面控制底部导航显隐 */
-function toggleBottomNav(pageId) {
-    const nav = document.getElementById('bottomNav');
-    if (!nav) return;
-    nav.style.display = NAV_PAGES.has(pageId) ? '' : 'none';
-}
-
-/** 更新导航高亮 + 显隐 */
+/** 更新导航高亮 */
 function updateNavHighlight(pageId) {
     const nav = document.getElementById('bottomNav');
     if (!nav) return;
-    // 控制显隐
-    nav.style.display = NAV_PAGES.has(pageId) ? '' : 'none';
-    // 更新高亮
     nav.querySelectorAll('.nav-item').forEach(item => {
         item.classList.toggle('active', item.dataset.page === pageId);
     });
@@ -188,8 +182,7 @@ async function navigateTo(pageId) {
     const next = document.getElementById(pageId);
     if (!next) { _transitioning = false; return; }
 
-    // 切换导航高亮 + 显隐
-    toggleBottomNav(pageId);
+    // 切换导航高亮
     updateNavHighlight(pageId);
 
     // 当前页淡出
@@ -230,6 +223,8 @@ async function navigateTo(pageId) {
 function setupPages() {
     // 1. 渲染统一的底部导航
     ensureBottomNav();
+    // 首页初始隐藏导航
+    updateNavHighlight('home');
 
     // 2. 标记数据驱动的页面容器
     markDataContainers();
@@ -260,7 +255,6 @@ function markDataContainers() {
 
 // 全局导出
 window.ensureBottomNav = ensureBottomNav;
-window.toggleBottomNav = toggleBottomNav;
 window.updateNavHighlight = updateNavHighlight;
 window.injectEmptyState = injectEmptyState;
 window.initEmptyStates = initEmptyStates;

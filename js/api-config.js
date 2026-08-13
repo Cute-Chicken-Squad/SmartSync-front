@@ -2,14 +2,14 @@
  * 智环引诊 - API 配置与鉴权模块
  *
  * 架构说明：
- *   管理端 Admin API → 代理 /admin/api/* → http://20.196.218.72:10139
- *   业务端 Biz API    → 代理 /api/*       → http://20.196.218.72:10138
+ *   管理端 Admin API → 代理 /admin/api/* → https://admin.ss.leeinx.com
+ *   业务端 Biz API    → 代理 /api/*       → https://service.ss.leeinx.com
  *
  * 鉴权方式: Bearer Token (JWT)
  *   管理员 Token: POST /admin/api/auth/login
  *   终端 Token:   POST /api/auth/login
  *
- * 管理后台账号: admin / aaHeUasC+A6onVfID4/FeqDb
+ * 管理后台账号: admin / 9a0e8c9ca0a614c6527581f1
  */
 
 // 后端连接开关 — 设为 true 断开后端，前端自动使用演示数据
@@ -20,6 +20,24 @@ const API_CONFIG = {
     admin: { baseURL: '/admin/api', timeout: 15000 },
     business: { baseURL: '/api', timeout: 15000 },
 };
+
+// ===================== 本地时间格式化 =====================
+// 注意：toISOString() 返回 UTC 时间，中国时区(UTC+8)会慢 8 小时，页面显示需用本地时间。
+
+function pad2(n) { return (n < 10 ? '0' : '') + n; }
+
+/** 本地日期时间字符串 "YYYY-MM-DD HH:mm:ss" */
+function formatLocalDateTime(d) {
+    d = d || new Date();
+    return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate())
+        + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds());
+}
+
+/** 本地日期字符串 "YYYY-MM-DD" */
+function formatLocalDate(d) {
+    d = d || new Date();
+    return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+}
 
 // ===================== Token 管理 =====================
 
@@ -123,9 +141,18 @@ async function apiRequest(config, endpoint, options = {}) {
         if (response.status === 401) {
             if (config === 'admin') {
                 TokenStore.clearAdmin();
-                // 非登录接口才跳转
+                _autoLoginDone = false;
+                // 非登录接口才跳转；auto-login 进行中时不弹窗
                 if (!endpoint.includes('/auth/login')) {
-                    if (typeof showLoginDialog === 'function') showLoginDialog();
+                    if (typeof showLoginDialog === 'function' && !_autoLoginPromise) {
+                        showLoginDialog('登录已过期，请重新登录');
+                    } else if (!_autoLoginPromise) {
+                        // 自动重试登录
+                        console.log('[API] 401 未授权，触发自动登录...');
+                        ensureAuth().then(function(ok) {
+                            if (ok) location.reload();
+                        });
+                    }
                 }
             } else {
                 TokenStore.clearBiz();
@@ -139,7 +166,13 @@ async function apiRequest(config, endpoint, options = {}) {
             return response.blob();
         }
 
-        const data = await response.json();
+        const data = JSON.parse(await response.text(), function (key, value) {
+            // 后端雪花 ID（19 位）超过 JS Number.MAX_SAFE_INTEGER，转成字符串避免精度丢失
+            if (typeof value === 'number' && Number.isInteger(value) && !Number.isSafeInteger(value)) {
+                return value.toString();
+            }
+            return value;
+        });
 
         if (!response.ok) {
             const msg = data.message || `HTTP ${response.status}`;
@@ -186,7 +219,7 @@ const adminApi = {
         const q = patientCount ? `?patientCount=${patientCount}` : '';
         return apiRequest('admin', `/dispatch/triage/${encodeURIComponent(deptName)}${q}`, { method: 'POST' });
     },
-    exportDispatchReport() { return apiRequest('admin', '/dispatch/report', { rawResponse: true }); },
+    exportDispatchReport() { return apiRequest('admin', '/dispatch/report'); },
 
     // Emergency
     getEmergencyAlarms(params) {
@@ -201,7 +234,7 @@ const adminApi = {
     closeAlarm(alarmId) { return apiRequest('admin', `/emergency/alarm/${alarmId}/close`, { method: 'PUT' }); },
     broadcastEmergency(content) { return apiRequest('admin', '/emergency/broadcast', { method: 'POST', body: { content } }); },
     createMaintenance(alarmId, note) { return apiRequest('admin', `/emergency/alarm/${alarmId}/maintenance`, { method: 'POST', body: { note } }); },
-    exportEmergencyRecords() { return apiRequest('admin', '/emergency/export', { rawResponse: true }); },
+    exportEmergencyRecords() { return apiRequest('admin', '/emergency/export'); },
 
     // Analytics
     getMonthlyTrend() { return apiRequest('admin', '/analytics/monthly-trend'); },
@@ -224,7 +257,7 @@ const adminApi = {
     },
     exportAnalytics(params) {
         const q = params ? '?' + new URLSearchParams(params).toString() : '';
-        return apiRequest('admin', '/analytics/export' + q, { rawResponse: true });
+        return apiRequest('admin', '/analytics/export' + q);
     },
 
     // Admin User Management
@@ -286,7 +319,7 @@ const adminApi = {
         return apiRequest('admin', '/dispatch/queue-detail' + q);
     },
     callPatient(patientId) { return apiRequest('admin', `/queue/call/${patientId}`, { method: 'POST' }); },
-    exportQueueDetail(deptName) { return apiRequest('admin', `/dispatch/queue-detail/export?deptName=${encodeURIComponent(deptName)}`, { rawResponse: true }); },
+    exportQueueDetail(deptName) { return apiRequest('admin', `/dispatch/queue-detail/export?deptName=${encodeURIComponent(deptName)}`); },
 };
 
 // ===================== 业务端 API (患者客户端 / 子站终端) =====================
@@ -397,10 +430,12 @@ const businessApi = {
     },
 
     // Navigation (患者 Token)
-    getNavigation(from, to) { return apiRequest('business', `/navigation?from=${from}&to=${to}`); },
+    getNavigation(from, to) { return apiRequest('business', `/navigation?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`); },
     startNavigation(data) { return apiRequest('business', '/navigation/start', { method: 'POST', body: data }); },
     arriveNavigation(data) { return apiRequest('business', '/navigation/arrive', { method: 'POST', body: data }); },
     getFloorPlan(floor) { return apiRequest('business', `/map/floor-plan?floor=${floor}`); },
+    /** 拉取全量地图节点/边 → GET /api/map（返回 { nodes:[{id,code,type,name,floor,x,y,icon}], edges:[...] }） */
+    getMap() { return apiRequest('business', '/map'); },
 
     // Family (患者 Token)
     getFamilyList(patientId) {
@@ -417,6 +452,13 @@ const businessApi = {
     substationVoice(stationId, voiceText) { return apiRequest('business', '/substation/voice', { method: 'POST', body: { stationId, voiceText } }); },
     substationStatus(stationId) { return apiRequest('business', `/substation/status/${stationId}`); },
     substationTaskConfirm(patientId, confirmed) { return apiRequest('business', '/substation/task/confirm', { method: 'PUT', body: { patientId, confirmed } }); },
+
+    /** 写入患者要去的目的地（科室）→ POST /api/substation/navigation/destinations，刷卡导航会自动排序 */
+    addDestination(patientId, nodeCode, label) {
+        return apiRequest('business', '/substation/navigation/destinations', {
+            method: 'POST', body: { patientId, nodeCode, label, position: 'append' },
+        });
+    },
 };
 
 // ===================== 登录对话框 =====================
@@ -441,7 +483,7 @@ function showLoginDialog(preMessage) {
             <label style="display:block;margin-bottom:4px;font-size:13px;color:#666;">账号</label>
             <input id="loginUsername" value="admin" style="width:100%;padding:10px;margin-bottom:12px;border:1px solid #ddd;border-radius:6px;font-size:14px;box-sizing:border-box;">
             <label style="display:block;margin-bottom:4px;font-size:13px;color:#666;">密码</label>
-            <input id="loginPassword" type="password" value="aaHeUasC+A6onVfID4/FeqDb" style="width:100%;padding:10px;margin-bottom:20px;border:1px solid #ddd;border-radius:6px;font-size:14px;box-sizing:border-box;">
+            <input id="loginPassword" type="password" value="9a0e8c9ca0a614c6527581f1" style="width:100%;padding:10px;margin-bottom:20px;border:1px solid #ddd;border-radius:6px;font-size:14px;box-sizing:border-box;">
             <button id="loginSubmitBtn" style="width:100%;padding:12px;background:#4285f4;color:#fff;border:none;border-radius:6px;font-size:15px;cursor:pointer;">登 录</button>
             <p style="font-size:11px;color:#aaa;margin:12px 0 0;text-align:center;">管理端: ${API_CONFIG.admin.baseURL}</p>
         </div>
@@ -486,6 +528,70 @@ function showLoginDialog(preMessage) {
     passwordInput.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 }
 
+// ===================== 业务端 Token（终端鉴权） =====================
+
+/**
+ * 确保有可用的业务端 token
+ * 管理员登录后自动注册终端 → 激活 → 登录 → 存储 token
+ */
+async function ensureBizToken(adminToken) {
+    // 已有有效 token 则跳过
+    const existing = TokenStore.getBizToken();
+    if (existing) {
+        console.log('[智环引诊] 业务端 token 已存在');
+        return;
+    }
+
+    try {
+        const code = 'BROWSER-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+        const secret = 'bs' + Date.now().toString(36);
+
+        // 1. 注册终端
+        const regResp = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ terminalCode: code, terminalName: '浏览器终端', secretKey: secret }),
+        });
+        if (!regResp.ok) { console.warn('[智环引诊] 终端注册失败'); return; }
+
+        // 2. 用管理员权限激活终端（BigInt 安全：从原始文本提取 ID）
+        const tpResp = await fetch('/admin/api/terminal/page?current=1&size=100', {
+            headers: { 'Authorization': 'Bearer ' + adminToken },
+        });
+        const tpText = await tpResp.text();
+        // 终端记录中 id 字段在 terminalCode 之前，向前查找最近的一个 "id":数字
+        const codeIdx = tpText.indexOf('"terminalCode":"' + code + '"');
+        let termId = null;
+        if (codeIdx !== -1) {
+            const before = tpText.slice(0, codeIdx);
+            const idMatches = before.match(/"id":(\d{15,20})/g);
+            if (idMatches && idMatches.length) {
+                termId = idMatches[idMatches.length - 1].replace(/[^\d]/g, '');
+            }
+        }
+        if (termId) {
+            await fetch('/admin/api/terminal/' + termId + '/status?status=1', {
+                method: 'PUT',
+                headers: { 'Authorization': 'Bearer ' + adminToken },
+            });
+        }
+
+        // 3. 终端登录
+        const loginResp = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ terminalCode: code, secretKey: secret }),
+        });
+        const loginData = await loginResp.json();
+        if (loginData.code === 200 && loginData.data?.token) {
+            TokenStore.setBizToken(loginData.data.token);
+            console.log('[智环引诊] 业务端 token 已获取');
+        }
+    } catch (e) {
+        console.warn('[智环引诊] 获取业务端 token 失败:', e.message);
+    }
+}
+
 // ===================== 初始化 =====================
 
 // 尝试用已存储的 token 验证身份
@@ -503,6 +609,8 @@ async function initAuth() {
         if (res.code === 200) {
             console.log('[智环引诊] Token 有效，已登录:', res.data?.displayName || res.data?.username);
             TokenStore.setAdminUser(res.data);
+            // 自动获取业务端 token（终端鉴权）
+            ensureBizToken(token);
             return true;
         }
     } catch (e) {
@@ -512,6 +620,58 @@ async function initAuth() {
     return false;
 }
 
+// ===================== 自动登录 =====================
+
+var _autoLoginDone = false;
+var _autoLoginPromise = null;
+
+/**
+ * 确保已登录 — 缓存有效 token 则复用，否则自动用 demo 账号登录
+ * 在页面数据加载前调用，保证写操作能真正到达后端数据库
+ */
+async function ensureAuth() {
+    if (_autoLoginDone) return true;
+    if (_autoLoginPromise) return _autoLoginPromise;
+
+    _autoLoginPromise = (async () => {
+        // 先尝试已有 token
+        var ok = await initAuth();
+        if (ok) {
+            _autoLoginDone = true;
+            console.log('[智环引诊] 认证就绪 (缓存 token)');
+            return true;
+        }
+
+        // 自动登录
+        console.log('[智环引诊] 自动登录中...');
+        try {
+            var res = await adminApi.login('admin', '9a0e8c9ca0a614c6527581f1');
+            if (res.code === 200 && res.data && res.data.token) {
+                TokenStore.setAdminToken(res.data.token);
+                TokenStore.setAdminUser({
+                    username: res.data.username,
+                    displayName: res.data.displayName,
+                });
+                _autoLoginDone = true;
+                console.log('[智环引诊] 自动登录成功:', res.data.displayName, '| token 已存入 localStorage');
+                // 同时获取业务端终端 token（子站写操作需要，如 POST /api/emergency）
+                await ensureBizToken(res.data.token);
+                return true;
+            }
+            console.warn('[智环引诊] 自动登录失败:', res.message || res.code);
+        } catch (e) {
+            console.warn('[智环引诊] 自动登录异常:', e.message);
+        }
+        _autoLoginDone = true; // 不阻塞后续流程，降级到 mock
+        return false;
+    })();
+
+    return _autoLoginPromise;
+}
+
+// 页面加载后立即触发登录
+ensureAuth();
+
 console.log('[智环引诊] API 配置已加载');
-console.log('  管理端:', API_CONFIG.admin.baseURL, '→ 10139');
+console.log('  管理端:', API_CONFIG.admin.baseURL, '→ admin.ss.leeinx.com');
 console.log('  业务端:', API_CONFIG.business.baseURL, '→ 10138');

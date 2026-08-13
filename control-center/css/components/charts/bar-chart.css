@@ -1,35 +1,65 @@
 /* 柱状图组件 */
 
+.chart-container {
+    height: 220px;
+    position: relative;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.chart-y-axis {
+    position: absolute;
+    left: 8px;
+    top: 30px;
+    bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    font-size: 11px;
+    color: #adb5bd;
+    z-index: 1;
+    width: 50px;
+}
+
+.chart-y-axis span {
+    text-align: right;
+    padding-right: 4px;
+}
+
 .bar-chart {
     display: flex;
-    justify-content: space-around;
     align-items: flex-end;
-    height: 180px;
-    padding-top: 35px;
-    padding-bottom: 15px;
+    gap: 4px;
+    height: 100%;
+    padding: 30px 8px 24px 58px;
+    min-width: fit-content;
 }
 
 .bar-item {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
+    gap: 3px;
+    flex-shrink: 0;
+    min-width: 28px;
 }
 
 .bar {
-    width: 40px;
+    width: 24px;
+    min-width: 24px;
     background: linear-gradient(180deg, #5c7cfa, #4c6ef5);
     border-radius: 6px 6px 0 0;
     transition: height 0.5s ease;
 }
 
 .bar-label {
-    font-size: 11px;
+    font-size: 9px;
     color: #868e96;
+    white-space: nowrap;
 }
 
 .bar-value {
-    font-size: 12px;
+    font-size: 9px;
     font-weight: 600;
     color: #495057;
 }

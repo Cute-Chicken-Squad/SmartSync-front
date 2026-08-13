@@ -8,19 +8,21 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     border: 1px solid #f1f3f5;
     display: flex;
-    gap: 20px;
+    gap: 12px;
     flex-wrap: wrap;
+    align-items: center;
 }
 
 .filter-group {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
 }
 
 .filter-label {
     font-size: 13px;
     color: #868e96;
+    white-space: nowrap;
 }
 
 .filter-select {
@@ -36,4 +38,36 @@
 .filter-select:focus {
     outline: none;
     border-color: #5c7cfa;
+}
+
+/* 自定义日期输入 */
+.filter-date {
+    padding: 7px 10px;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    font-size: 13px;
+    background: #fff;
+    color: #495057;
+    width: 130px;
+}
+
+.filter-date:focus {
+    outline: none;
+    border-color: #5c7cfa;
+}
+
+/* 重置按钮 */
+.btn-reset {
+    background: #f8f9fa;
+    color: #666;
+    border: 1px solid #e9ecef;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-reset:hover {
+    background: #e9ecef;
 }

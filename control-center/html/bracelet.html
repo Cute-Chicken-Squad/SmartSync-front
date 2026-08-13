@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>智环引诊 - 导诊台手环发放</title>
-    <link rel="stylesheet" href="../css/common.css">
-    <link rel="stylesheet" href="../css/bracelet.css">
+    <link rel="stylesheet" href="/control-center/css/common.css">
+    <link rel="stylesheet" href="/control-center/css/bracelet.css">
 </head>
 
 <body>
@@ -19,25 +19,25 @@
             </div>
             <ul class="nav-menu">
                 <li class="nav-item">
-                    <a href="index.html" class="nav-link">首页</a>
+                    <a href="/control-center/html/index.html" class="nav-link">首页</a>
                 </li>
                 <li class="nav-item">
-                    <a href="dispatch.html" class="nav-link">调度管理</a>
+                    <a href="/control-center/html/dispatch.html" class="nav-link">调度管理</a>
                 </li>
                 <li class="nav-item">
-                    <a href="bracelet.html" class="nav-link active">手环管理</a>
+                    <a href="/control-center/html/bracelet.html" class="nav-link active">手环管理</a>
                 </li>
                 <li class="nav-item">
-                    <a href="task-monitor.html" class="nav-link">任务监控</a>
+                    <a href="/control-center/html/task-monitor.html" class="nav-link">任务监控</a>
                 </li>
                 <li class="nav-item">
-                    <a href="emergency.html" class="nav-link">紧急情况</a>
+                    <a href="/control-center/html/emergency.html" class="nav-link">紧急情况</a>
                 </li>
                 <li class="nav-item">
-                    <a href="analytics.html" class="nav-link">数据分析</a>
+                    <a href="/control-center/html/analytics.html" class="nav-link">数据分析</a>
                 </li>
                 <li class="nav-item">
-                    <a href="settings.html" class="nav-link">系统设置</a>
+                    <a href="/control-center/html/settings.html" class="nav-link">系统设置</a>
                 </li>
             </ul>
         </aside>
@@ -117,7 +117,7 @@
                                 <span class="reader-icon"></span>
                                 <p>请将身份证放置在读卡器上</p>
                             </div>
-                            <button class="btn primary" onclick="simulateIdRead()">模拟读卡</button>
+                            <button class="btn primary" onclick="simulateIdRead(event)">模拟读卡</button>
                         </div>
                         <form id="patientForm" class="patient-form">
                             <div class="form-row">
@@ -159,15 +159,7 @@
                                 <label class="form-label required">目标科室</label>
                                 <select id="targetDept" class="form-select" required>
                                     <option value="">请选择目标科室</option>
-                                    <option value="internal">内科</option>
-                                    <option value="surgery">外科</option>
-                                    <option value="cardiology">心内科</option>
-                                    <option value="endocrinology">内分泌科</option>
-                                    <option value="gastroenterology">消化内科</option>
-                                    <option value="ent">耳鼻喉科</option>
-                                    <option value="dermatology">皮肤科</option>
-                                    <option value="pediatrics">儿科</option>
-                                    <option value="tcm">中医科</option>
+                                    <!-- 科室选项由 bracelet.js 从 GET /api/map 动态加载（type=destination 的节点） -->
                                 </select>
                             </div>
                             <div class="form-group full-width">
@@ -372,10 +364,10 @@
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label class="form-label">手环ID（12位）</label>
-                    <input type="text" id="manualBraceletId" class="form-input" placeholder="请输入12位手环ID" maxlength="12"
+                    <label class="form-label">手环 NFC 芯片 ID</label>
+                    <input type="text" id="manualBraceletId" class="form-input" placeholder="请输入手环 NFC 芯片 ID，如 NF8997190469"
                         style="text-transform: uppercase;">
-                    <p class="form-hint">手环ID为12位大写字母和数字组合</p>
+                    <p class="form-hint">即 NFC 芯片 UID，靠近感应区自动读取，或手动录入</p>
                 </div>
             </div>
             <div class="modal-footer">
@@ -421,7 +413,7 @@
 
     <script src="/js/api-config.js"></script>
     <script src="/js/mock-data.js"></script>
-    <script src="../js/bracelet.js"></script>
+    <script src="/control-center/js/bracelet.js"></script>
 </body>
 
 </html>

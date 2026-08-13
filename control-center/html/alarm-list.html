@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>智环引诊 - 警报列表</title>
-    <link rel="stylesheet" href="../css/common.css">
-    <link rel="stylesheet" href="../css/analytics.css">
+    <link rel="stylesheet" href="/control-center/css/common.css">
+    <link rel="stylesheet" href="/control-center/css/analytics.css">
 </head>
 
 <body>
@@ -18,19 +18,19 @@
             </div>
             <ul class="nav-menu">
                 <li class="nav-item">
-                    <a href="index.html" class="nav-link">首页</a>
+                    <a href="/control-center/html/index.html" class="nav-link">首页</a>
                 </li>
                 <li class="nav-item">
-                    <a href="dispatch.html" class="nav-link">调度管理</a>
+                    <a href="/control-center/html/dispatch.html" class="nav-link">调度管理</a>
                 </li>
                 <li class="nav-item">
-                    <a href="emergency.html" class="nav-link active">紧急情况</a>
+                    <a href="/control-center/html/emergency.html" class="nav-link active">紧急情况</a>
                 </li>
                 <li class="nav-item">
-                    <a href="analytics.html" class="nav-link">数据分析</a>
+                    <a href="/control-center/html/analytics.html" class="nav-link">数据分析</a>
                 </li>
                 <li class="nav-item">
-                    <a href="settings.html" class="nav-link">系统设置</a>
+                    <a href="/control-center/html/settings.html" class="nav-link">系统设置</a>
                 </li>
             </ul>
         </aside>
@@ -57,16 +57,19 @@
                         <option value="all">全部</option>
                         <option value="pending">待处理</option>
                         <option value="processing">处理中</option>
-                        <option value="completed">已处理</option>
+                        <option value="ignored">已忽略</option>
+                        <option value="closed">已处理</option>
                     </select>
                 </div>
                 <div class="filter-group">
                     <span class="filter-label">优先级:</span>
                     <select class="filter-select" onchange="filterAlarms()">
                         <option value="all">全部</option>
-                        <option value="high">紧急</option>
-                        <option value="medium">中等</option>
-                        <option value="low">一般</option>
+                        <option value="5">特急</option>
+                        <option value="4">紧急</option>
+                        <option value="3">中等</option>
+                        <option value="2">一般</option>
+                        <option value="1">低</option>
                     </select>
                 </div>
                 <div class="filter-group">
@@ -89,11 +92,17 @@
                     <table class="data-table">
                         <thead>
                             <tr>
+                                <th>警报编号</th>
                                 <th>时间</th>
                                 <th>位置</th>
+                                <th>患者</th>
                                 <th>描述</th>
+                                <th>类型</th>
                                 <th>优先级</th>
+                                <th>来源终端</th>
                                 <th>状态</th>
+                                <th>处理人</th>
+                                <th>处理时间</th>
                                 <th>操作</th>
                             </tr>
                         </thead>
@@ -107,7 +116,7 @@
 
     <script src="/js/api-config.js"></script>
     <script src="/js/mock-data.js"></script>
-    <script src="../js/alarm-list.js"></script>
+    <script src="/control-center/js/alarm-list.js"></script>
 </body>
 
 </html>

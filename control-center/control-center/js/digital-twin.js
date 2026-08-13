@@ -28,8 +28,8 @@ let heatmapConfig = {
 
 // 配置信息
 const config = {
-    imagePath: '/front/digital-twin/JJI54559656769/map.jpg',
-    nodesPath: '/front/digital-twin/JJI54559656769/ImageToStl.com_5000㎡中心医院平面布置图方案+(1)_coords_nodes.json',
+    imagePath: '/digital-twin/data/hospital_f1/floor_plan.jpg',
+    nodesPath: '/digital-twin/data/hospital_f1/nodes_f1.json',
     apiBase: 'http://localhost:3000/api',
     scale: 100, // 米转像素的缩放因子
     imageWidth: 2000,

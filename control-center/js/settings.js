@@ -148,9 +148,11 @@ async function addSubstation() {
     const name = prompt('请输入子站名称 (如 2F-心内科):');
     if (!name) return;
     const key = prompt('请输入通信密钥 (留空自动生成):') || generateKey();
+    const mapNodeCode = prompt('请输入关联地图节点编码 (如 MAP-2F-03):');
+    if (!mapNodeCode) return;
 
     try {
-        const res = await adminApi.addSubstation({ terminalCode: code, terminalName: name, secretKey: key, status: 1 });
+        const res = await adminApi.addSubstation({ terminalCode: code, terminalName: name, secretKey: key, mapNodeCode, status: 1 });
         if (res.code === 200) {
             alert(`子站 ${name} 已添加 ✅`);
             await loadSubstations();

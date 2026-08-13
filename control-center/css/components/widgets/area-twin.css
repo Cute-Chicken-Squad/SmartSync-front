@@ -83,3 +83,130 @@
     background: linear-gradient(to right, #51cf66, #fcc419, #ff6b6b);
     border-radius: 2px;
 }
+
+/* 数字孪生预览区块样式 */
+.area-twin-preview {
+    position: relative;
+    width: 100%;
+    height: 300px;
+    margin-bottom: 16px;
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.area-twin-preview:hover {
+    transform: scale(1.01);
+    box-shadow: 0 4px 24px rgba(59, 130, 246, 0.15);
+}
+
+.twin-preview-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: brightness(0.9);
+}
+
+.twin-preview-canvas {
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    border-radius: 10px;
+}
+
+.twin-overlay-info {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 14px 20px;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.35) 60%, transparent 100%);
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    pointer-events: none;
+}
+
+.twin-stats {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 12px;
+}
+
+.stat-label {
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.stat-value {
+    font-weight: 700;
+    color: white;
+    font-size: 15px;
+    font-variant-numeric: tabular-nums;
+}
+
+.stat-value.success {
+    color: #51cf66;
+}
+
+.twin-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+}
+
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #868e96;
+}
+
+.status-indicator.online {
+    background: #51cf66;
+    animation: pulse 2s infinite;
+}
+
+/* 状态徽章 */
+.twin-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #10b981;
+    padding: 4px 10px;
+    background: #ecfdf5;
+    border-radius: 12px;
+}
+.twin-status-badge .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #10b981;
+    animation: pulse 2s infinite;
+}
+
+.card-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}

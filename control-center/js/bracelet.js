@@ -7,6 +7,7 @@ let pageSize = 10;
 let totalPatients = 0;
 let patientData = null;
 let selectedPatientId = null;
+let deptNodes = [];   // 地图目的地节点（从 /api/map 动态加载，type === 'destination'）
 
 // 科室名称映射
 const deptMap = {
@@ -88,6 +89,52 @@ const taskQueueMap = {
     ]
 };
 
+// 地图不可用时的降级科室列表（对应后端真实 destination 节点）
+const deptFallback = [
+    { code: 'DEPT_INTERNAL', name: '内科诊室' },
+    { code: 'DEPT_SURGERY', name: '外科诊室' },
+    { code: 'DEPT_PEDIATRICS', name: '儿科诊室' },
+    { code: 'DEPT_ORTHOPEDICS', name: '骨科诊室' },
+    { code: 'DEPT_LAB', name: '检验科' },
+    { code: 'DEPT_ULTRASOUND', name: 'B超室' },
+    { code: 'ECG_1F', name: '心电图室' }
+];
+
+// 从后端地图加载「目的地」节点，填充目标科室下拉框
+async function loadDeptOptions() {
+    const select = document.getElementById('targetDept');
+    if (!select) return;
+
+    // 降级：API 失败时用本地科室列表兜底
+    const renderOptions = (nodes) => {
+        deptNodes = nodes;
+        select.innerHTML = '<option value="">请选择目标科室</option>' + nodes.map(n =>
+            '<option value="' + n.code + '">' + n.name + '</option>'
+        ).join('');
+    };
+
+    try {
+        const res = await businessApi.getMap();
+        if (res && res.code === 200 && res.data && res.data.nodes) {
+            const destinations = res.data.nodes
+                .filter(n => n.type === 'destination')
+                .map(n => ({ code: n.code, name: n.name }));
+            if (destinations.length) { renderOptions(destinations); return; }
+        }
+        console.warn('[手环] 地图目的地节点为空，使用降级科室列表');
+    } catch (e) {
+        console.warn('[手环] 加载地图失败，使用降级科室列表:', e.message);
+    }
+    renderOptions(deptFallback);
+}
+
+// 根据科室 code 取显示名（优先查地图节点，其次本地映射，最后回退 code 本身）
+function getDeptName(code) {
+    const node = deptNodes.find(n => n.code === code);
+    if (node) return node.name;
+    return deptMap[code] || code;
+}
+
 // 模拟数据 - 已分配手环列表
 let assignedBracelets = [
     { id: 1, name: '王大爷', maskedId: 'PAT-7A3B-9C2D', braceletId: 'ABC123456789', dept: '心内科', deptCode: 'cardiology', bindTime: '2026-06-17 08:15', status: 'active' },
@@ -103,6 +150,7 @@ let assignedBracelets = [
 // 初始化
 document.addEventListener('DOMContentLoaded', function () {
     updateDateTime();
+    loadDeptOptions();
     loadPatientList();
     updateSummaryStats();
 });
@@ -111,7 +159,7 @@ document.addEventListener('DOMContentLoaded', function () {
 function updateDateTime() {
     setInterval(() => {
         const date = new Date();
-        const timeString = date.toISOString().replace('T', ' ').substring(0, 19);
+        const timeString = formatLocalDateTime(date);
         document.getElementById('dateInfo').textContent = timeString;
     }, 1000);
 }
@@ -158,13 +206,13 @@ function playBeepSound() {
 }
 
 // 模拟身份证读卡
-function simulateIdRead() {
-    const btn = event.target;
+function simulateIdRead(e) {
+    const btn = (e && e.target) || document.querySelector('#step1Content .btn.primary');
+    if (!btn) return;
     btn.innerHTML = '读取中...';
     btn.disabled = true;
 
     setTimeout(() => {
-        // 随机生成患者信息
         const names = ['张伟', '李娜', '王芳', '刘洋', '陈明', '杨静', '赵磊', '黄丽'];
         const name = names[Math.floor(Math.random() * names.length)];
         const gender = Math.random() > 0.5 ? '1' : '2';
@@ -206,12 +254,11 @@ function generateMaskedId() {
     return 'PAT-' + part1 + '-' + part2;
 }
 
-// 生成手环ID
-function generateBraceletId() {
-    const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUV';
-    let result = '';
-    for (let i = 0; i < 12; i++) {
-        result += chars.charAt(Math.floor(Math.random() * chars.length));
+// 生成 NFC 芯片 UID（模拟手环 NFC 靠近读到的 ID，格式如 NF8997190469）
+function generateNfcId() {
+    let result = 'NF';
+    for (let i = 0; i < 10; i++) {
+        result += Math.floor(Math.random() * 10);
     }
     return result;
 }
@@ -257,7 +304,7 @@ function goToStep2() {
         emergencyContactName: document.getElementById('emergencyContactName').value,
         emergencyContactPhone: document.getElementById('emergencyContactPhone').value,
         targetDept: targetDept,
-        deptName: deptMap[targetDept]
+        deptName: getDeptName(targetDept)
     };
 
     updatePatientPreview();
@@ -273,18 +320,57 @@ function goToStep2() {
     document.getElementById('assignStatus').classList.add('active');
 }
 
-function goToStep3(braceletId) {
-    const maskedId = generateMaskedId();
-    patientData.braceletId = braceletId;
+async function goToStep3(nfcId) {
+    // 1. 先建患者档案（不传手环字段），拿到患者 ID（后端 19 位雪花 ID 已被转成字符串）
+    const patientId = await createPatientApi({
+        name: patientData.name,
+        idCardNo: patientData.idCardNo,
+        gender: patientData.gender ? parseInt(patientData.gender, 10) : null,
+        age: patientData.age ? parseInt(patientData.age, 10) : null,
+        phone: patientData.phone || null,
+        insuranceNo: patientData.insuranceNo || null,
+        medicalHistory: patientData.medicalHistory || null,
+        emergencyContactName: patientData.emergencyContactName || null,
+        emergencyContactPhone: patientData.emergencyContactPhone || null,
+    });
+
+    // 2. 绑定 NFC 手环（POST /api/nfc/bind），后端返回 braceletId / maskedId / bindTime
+    let maskedId = generateMaskedId();
+    let bindTime = new Date().toISOString().replace('T', ' ').substring(0, 19);
+    if (patientId) {
+        const bind = await bindNfcApi(nfcId, patientId);
+        if (bind) {
+            maskedId = bind.maskedId || maskedId;
+            bindTime = (bind.bindTime || '').replace('T', ' ').substring(0, 19) || bindTime;
+        } else {
+            console.warn('[手环] NFC 绑定失败，使用本地脱敏 ID');
+        }
+    } else {
+        console.warn('[手环] 患者建档失败，仅本地记录');
+    }
+
+    patientData.patientId = patientId;
+    patientData.nfcId = nfcId;
+    patientData.braceletId = nfcId;   // 展示用 NFC 芯片 ID
     patientData.maskedId = maskedId;
-    patientData.bindTime = new Date().toISOString().replace('T', ' ').substring(0, 19);
+    patientData.bindTime = bindTime;
+
+    // 3. 写入目的地（科室）→ 后端刷卡导航会自动排序要去科室的顺序
+    if (patientId && patientData.targetDept) {
+        const destOk = await addDestinationApi(patientId, patientData.targetDept, patientData.deptName);
+        if (destOk) {
+            console.log('[手环] 已写入目的地:', patientData.deptName, '(' + patientData.targetDept + ')');
+        } else {
+            console.warn('[手环] 写入目的地失败，仅本地记录');
+        }
+    }
 
     // 显示结果
     document.getElementById('resultMaskedId').textContent = maskedId;
     document.getElementById('resultName').textContent = patientData.name;
     document.getElementById('resultDept').textContent = patientData.deptName;
-    document.getElementById('resultBraceletId').textContent = braceletId;
-    document.getElementById('resultTime').textContent = patientData.bindTime;
+    document.getElementById('resultBraceletId').textContent = nfcId;
+    document.getElementById('resultTime').textContent = bindTime;
 
     // 生成任务队列
     renderTaskQueue(patientData.targetDept);
@@ -301,34 +387,9 @@ function goToStep3(braceletId) {
     document.getElementById('assignStatus').textContent = '已完成';
     document.getElementById('assignStatus').classList.add('active');
 
-    // ★ 写入后端数据库
-    createPatientApi({
-        name: patientData.name,
-        idCardNo: patientData.idCardNo,
-        gender: patientData.gender,
-        age: patientData.age,
-        phone: patientData.phone,
-        insuranceNo: patientData.insuranceNo,
-        medicalHistory: patientData.medicalHistory,
-        emergencyContactName: patientData.emergencyContactName,
-        emergencyContactPhone: patientData.emergencyContactPhone,
-        dept: patientData.targetDept,
-        deptName: patientData.deptName,
-        braceletId: braceletId,
-        maskedId: maskedId,
-        bindTime: patientData.bindTime,
-    }).then(result => {
-        if (result) {
-            console.log('[手环] 患者已写入后端:', patientData.name, result);
-            // 添加到本地列表
-            addPatientToList(patientData);
-            updateSummaryStats();
-        } else {
-            console.warn('[手环] 后端写入失败，仅本地保存');
-            addPatientToList(patientData);
-            updateSummaryStats();
-        }
-    });
+    // 加入本地列表并刷新汇总
+    addPatientToList(patientData);
+    updateSummaryStats();
 }
 
 // 渲染任务队列
@@ -432,14 +493,14 @@ function startBind() {
     bindBtn.innerHTML = '绑定中...';
 
     // 更新设备状态
-    document.getElementById('deviceStatus').textContent = '正在写入...';
+    document.getElementById('deviceStatus').textContent = '正在读取...';
     document.getElementById('deviceStatus').className = 'device-status scanning';
     document.querySelector('.light-dot').className = 'light-dot scanning';
-    document.querySelector('.light-label').textContent = '写入中';
+    document.querySelector('.light-label').textContent = '读取中';
 
     // 1.5秒后完成
     setTimeout(() => {
-        const braceletId = generateBraceletId();
+        const nfcId = generateNfcId();
 
         // 播放滴声
         playBeepSound();
@@ -450,20 +511,20 @@ function startBind() {
         // 更新屏幕内容
         document.getElementById('screenContent').innerHTML = `
             <div class="screen-success">
-                <div class="success-text">✓ 写入成功</div>
-                <div class="bracelet-id-text">${braceletId}</div>
+                <div class="success-text">✓ 读取成功</div>
+                <div class="bracelet-id-text">${nfcId}</div>
             </div>
         `;
 
         // 更新设备状态
-        document.getElementById('deviceStatus').textContent = '写入完成';
+        document.getElementById('deviceStatus').textContent = '读取完成';
         document.getElementById('deviceStatus').className = 'device-status success';
         document.querySelector('.light-dot').className = 'light-dot success';
         document.querySelector('.light-label').textContent = '完成';
 
         // 0.8秒后跳转到步骤3
         setTimeout(() => {
-            goToStep3(braceletId);
+            goToStep3(nfcId);
         }, 800);
     }, 1500);
 }
@@ -479,20 +540,20 @@ function closeManualModal() {
 }
 
 function confirmManualBind() {
-    const braceletId = document.getElementById('manualBraceletId').value.trim().toUpperCase();
+    const nfcId = document.getElementById('manualBraceletId').value.trim().toUpperCase();
 
-    if (!braceletId || braceletId.length !== 12 || !/^[0-9A-V]{12}$/.test(braceletId)) {
-        alert('请输入正确的12位手环ID（大写字母A-V和数字）');
+    if (!nfcId) {
+        alert('请输入手环 NFC 芯片 ID');
         return;
     }
 
-    if (assignedBracelets.some(p => p.braceletId === braceletId && p.status === 'active')) {
-        alert('该手环ID已被绑定，请使用其他手环');
+    if (assignedBracelets.some(p => p.braceletId === nfcId && p.status === 'active')) {
+        alert('该手环 NFC 已被绑定，请使用其他手环');
         return;
     }
 
     closeManualModal();
-    goToStep3(braceletId);
+    goToStep3(nfcId);
 }
 
 // 重置表单
@@ -520,11 +581,11 @@ async function loadPatientList() {
                 id: r.id,
                 name: r.name,
                 maskedId: r.maskedId || r.idCardNo,
-                braceletId: r.braceletId || '',
-                dept: r.deptName || r.dept || '',
-                deptCode: r.dept || '',
+                braceletId: r.nfcUid || '',
+                dept: '',
+                deptCode: '',
                 bindTime: r.bindTime || r.createdAt || '',
-                status: r.status === 1 || r.status === 'active' ? 'active' : 'inactive',
+                status: r.nfcUid ? 'active' : 'inactive',
             }));
             totalPatients = data.total || assignedBracelets.length;
             renderPatientTable(searchTerm);
@@ -568,8 +629,8 @@ function renderPatientTable(searchTerm) {
             <td><span class="bracelet-id-text">${patient.braceletId}</span></td>
             <td><span class="status-badge ${patient.status}">${patient.status === 'active' ? '已绑定' : '已解绑'}</span></td>
             <td>
-                <button class="btn-sm" onclick="showDetailModalById(${patient.id})">详情</button>
-                <button class="btn-sm danger" onclick="showUnbindModal(${patient.id})" ${patient.status === 'inactive' ? 'disabled' : ''}>解绑</button>
+                <button class="btn-sm" onclick="showDetailModalById('${patient.id}')">详情</button>
+                <button class="btn-sm danger" onclick="showUnbindModal('${patient.id}')" ${patient.status === 'inactive' ? 'disabled' : ''}>解绑</button>
             </td>
         `;
         tbody.appendChild(row);
@@ -606,23 +667,29 @@ function updatePageInfo() {
 // 添加患者到列表
 function addPatientToList(data) {
     const newPatient = {
-        id: assignedBracelets.length + 1,
+        id: data.patientId || (assignedBracelets.length + 1),
         name: data.name,
         maskedId: data.maskedId,
-        braceletId: data.braceletId,
+        braceletId: data.braceletId,   // NFC 芯片 ID
         dept: data.deptName,
         deptCode: data.targetDept,
         bindTime: data.bindTime,
         status: 'active'
     };
     assignedBracelets.unshift(newPatient);
+    // 同步到 localStorage，供任务监控页读取
+    try {
+        const stored = JSON.parse(localStorage.getItem('smartsync_patients') || '[]');
+        stored.unshift(newPatient);
+        localStorage.setItem('smartsync_patients', JSON.stringify(stored.slice(0, 100)));
+    } catch(e) {}
     loadPatientList();
 }
 
 // 显示解绑弹窗
 function showUnbindModal(patientId) {
     selectedPatientId = patientId;
-    const patient = assignedBracelets.find(p => p.id === patientId);
+    const patient = assignedBracelets.find(p => String(p.id) === String(patientId));
     document.getElementById('unbindBraceletId').textContent = patient.braceletId;
     document.getElementById('unbindModal').classList.add('show');
 }
@@ -634,17 +701,14 @@ function closeUnbindModal() {
 
 async function confirmUnbind() {
     if (selectedPatientId) {
-        const patient = assignedBracelets.find(p => p.id === selectedPatientId);
+        const patient = assignedBracelets.find(p => String(p.id) === String(selectedPatientId));
         if (patient) {
-            // ★ 调用后端 API 删除/解绑
-            const ok = await deletePatientApi(selectedPatientId);
+            // ★ 解绑 = 归还手环（POST /api/bracelet/return，清空 nfcUid，保留患者档案）
+            const ok = await returnBraceletApi(selectedPatientId);
             if (ok) {
-                patient.status = 'inactive';
-                console.log('[手环] 已通过 API 解绑:', patient.name);
+                console.log('[手环] 已通过 API 归还手环:', patient.name);
             } else {
-                // API 失败也本地标记（降级）
-                patient.status = 'inactive';
-                console.warn('[手环] API 解绑失败，仅本地标记');
+                console.warn('[手环] API 归还失败，仅本地标记');
             }
             loadPatientList();
             updateSummaryStats();
@@ -656,7 +720,7 @@ async function confirmUnbind() {
 
 // 显示详情弹窗
 function showDetailModalById(patientId) {
-    const patient = assignedBracelets.find(p => p.id === patientId);
+    const patient = assignedBracelets.find(p => String(p.id) === String(patientId));
     if (patient) {
         showDetailModal(patient);
     }
@@ -710,6 +774,9 @@ function showDetailModal(patient) {
                 <div class="task-queue" style="margin-top: 8px;">
                     ${taskListHtml}
                 </div>
+                ${patient.status === 'active' ? `
+                <button class="btn primary" style="margin-top:16px;width:100%;" onclick="location.href='/control-center/html/task-monitor.html?patientId=${patient.id}&patientName=${encodeURIComponent(patient.name)}'">任务管理 →</button>
+                ` : ''}
             </div>
         </div>
     `;
@@ -747,6 +814,17 @@ async function createPatientApi(data) {
 }
 
 /** 更新患者 → PUT /api/patient/:id */
+/** 写入目的地（科室）→ POST /api/substation/navigation/destinations，刷卡导航自动排序 */
+async function addDestinationApi(patientId, nodeCode, label) {
+    try {
+        const res = await businessApi.addDestination(patientId, nodeCode, label);
+        return res.code === 200;
+    } catch (error) {
+        console.error('写入目的地失败:', error);
+        return false;
+    }
+}
+
 async function updatePatientApi(id, data) {
     try {
         const res = await businessApi.updatePatient(id, data);
@@ -786,13 +864,37 @@ async function loadBraceletSummary() {
     }
 }
 
-/** 删除/解绑患者 → DELETE /api/patient/:id */
+/** 删除患者 → DELETE /api/patient/:id */
 async function deletePatientApi(id) {
     try {
         const res = await businessApi.deletePatient(id);
         return res.code === 200;
     } catch (error) {
         console.error('删除患者失败:', error);
+        return false;
+    }
+}
+
+/** 绑定 NFC 手环 → POST /api/nfc/bind，返回 { braceletId, maskedId, bindTime } */
+async function bindNfcApi(nfcId, patientId) {
+    try {
+        const res = await businessApi.nfcBind(nfcId, patientId);
+        if (res.code === 200) return res.data;
+        console.warn('绑定 NFC 返回非 200:', res);
+        return null;
+    } catch (error) {
+        console.error('绑定 NFC 失败:', error);
+        return null;
+    }
+}
+
+/** 归还/解绑手环 → POST /api/bracelet/return（清空 nfcUid，保留患者档案） */
+async function returnBraceletApi(patientId) {
+    try {
+        const res = await businessApi.returnBracelet(patientId);
+        return res.code === 200;
+    } catch (error) {
+        console.error('归还手环失败:', error);
         return false;
     }
 }

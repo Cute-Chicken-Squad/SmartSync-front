@@ -7,3 +7,17 @@
 @import url('./components/widgets/filter-bar.css');
 @import url('./components/charts/trend-indicator.css');
 @import url('./components/responsive/analytics-responsive.css');
+
+/* 科室排行 & 满意度专用容器（非 chart-container，自适应高度） */
+.rank-container,
+.satisfaction-container {
+    min-height: 220px;
+    max-height: 420px;
+    overflow-y: auto;
+    padding: 8px 4px;
+}
+
+.rank-list {
+    display: flex;
+    flex-direction: column;
+}

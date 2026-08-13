@@ -128,10 +128,12 @@ const PatientService = {
 
     // ---- 排队 ----
     async getQueueStatus(dept, patientId) {
+        if (!dept) return null; // 后端 dept 必填，无科室时跳过请求
         const res = await businessApi.getQueueStatus(dept, patientId || PatientSession.getPatientId());
         return res.code === 200 ? res.data : null;
     },
     async getQueueProgress(dept) {
+        if (!dept) return []; // 后端 dept 必填，无科室时跳过请求
         const res = await businessApi.getQueueProgress(dept);
         return res.code === 200 ? res.data : [];
     },
@@ -155,9 +157,11 @@ const PatientService = {
 
     // ---- 操作 ----
     async submitRating(data) {
+        const patientId = data.patientId || PatientSession.getPatientId();
+        if (!patientId) return false; // 后端 patientId 必填，无患者时走演示兜底
         const res = await businessApi.submitRating({
-            visitId: data.visitId || PatientSession.getVisitId(),
-            patientId: data.patientId || PatientSession.getPatientId(),
+            visitId: data.visitId || PatientSession.getVisitId() || 1,
+            patientId,
             score: data.score,
             comment: data.comment || '',
             tags: data.tags || [],
@@ -165,8 +169,10 @@ const PatientService = {
         return res.code === 200;
     },
     async sendEmergency(data) {
+        const patientId = data.patientId || PatientSession.getPatientId();
+        if (!patientId) return null; // 后端 patientId 必填，无患者时走演示兜底
         const res = await businessApi.sendEmergency({
-            patientId: data.patientId || PatientSession.getPatientId(),
+            patientId,
             location: data.location || '',
             type: data.type || 'emergency',
             description: data.description || '',
@@ -223,7 +229,9 @@ const PatientService = {
         return res.code === 200 ? res.data : null;
     },
     async startNavigation(visitId, fromNodeId, toNodeId) {
-        const res = await businessApi.startNavigation({ visitId: visitId || PatientSession.getVisitId(), fromNodeId, toNodeId });
+        const vid = visitId || PatientSession.getVisitId();
+        if (!vid || !fromNodeId || !toNodeId) return null; // 后端三者必填，缺一不发起请求
+        const res = await businessApi.startNavigation({ visitId: vid, fromNodeId, toNodeId });
         return res.code === 200 ? res.data : null;
     },
     async arriveNavigation(visitId, nodeId) {

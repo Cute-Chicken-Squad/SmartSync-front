@@ -409,13 +409,13 @@ window.addEventListener('load', async () => {
             if (!document.getElementById('loginOverlay')) {
                 observer.disconnect();
                 refreshAllData();
-                if (typeof AlarmPopup !== 'undefined') AlarmPopup.start();
+                if (typeof AlarmRealtime !== 'undefined') AlarmRealtime.start(() => { loadAlarms(); refreshAllData(); });
             }
         });
         observer.observe(document.body, { childList: true });
         return;
     }
     refreshAllData();
-    // 启动警报弹窗监听
-    if (typeof AlarmPopup !== 'undefined') AlarmPopup.start();
+    // 启动警报实时监控（SSE 推送 + 轮询兜底）
+    if (typeof AlarmRealtime !== 'undefined') AlarmRealtime.start(() => { loadAlarms(); refreshAllData(); });
 });

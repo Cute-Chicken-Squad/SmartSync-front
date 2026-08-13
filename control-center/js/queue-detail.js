@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     // 时钟
     setInterval(function () {
         var date = new Date();
-        var timeString = date.toISOString().replace('T', ' ').substring(0, 19);
+        var timeString = formatLocalDateTime(date);
         document.getElementById('dateInfo').textContent = timeString;
     }, 1000);
 
@@ -70,8 +70,8 @@ async function loadQueueData() {
                     gender: r.gender || '',
                     age: r.age || '',
                     arrivalTime: (r.arrivalTime || r.createdAt || '').substring(11, 19) || '--:--:--',
-                    waitingTime: r.waitingTime || r.waitMinutes ? (r.waitMinutes + '分钟') : '--',
-                    priority: r.priority || '普通',
+                    waitingTime: (r.waitingTime != null ? r.waitingTime + '分钟' : (r.waitMinutes != null ? r.waitMinutes + '分钟' : '--')),
+                    priority: ({ 'urgent': '紧急', 'priority': '优先', 'normal': '普通' }[r.priority] || r.priority || '普通'),
                     status: r.status || 'waiting',
                 };
             });
@@ -116,7 +116,7 @@ function renderQueue() {
             '<td>' + item.waitingTime + '</td>' +
             '<td><span class="status-badge ' + priorityClass + '">' + item.priority + '</span></td>' +
             '<td><span class="status-badge ' + statusClass + '">' + statusText + '</span></td>' +
-            '<td>' + (item.status !== 'completed' ? '<button class="btn-sm" onclick="callPatient(' + item.id + ')">叫号</button>' : '') + '</td>';
+            '<td>' + (item.status !== 'completed' ? '<button class="btn-sm" onclick="callPatient(\'' + item.id + '\')">叫号</button>' : '') + '</td>';
         tbody.appendChild(row);
     });
 
@@ -131,7 +131,7 @@ async function callPatient(id) {
         if (res.code === 200) {
             console.log('[排队详情] 已叫号:', id);
             // 更新本地状态
-            var patient = currentQueueData.find(function (p) { return p.id === id; });
+            var patient = currentQueueData.find(function (p) { return String(p.id) === String(id); });
             if (patient) patient.status = 'calling';
             renderQueue();
         }
@@ -141,19 +141,21 @@ async function callPatient(id) {
     }
 }
 
-async function exportQueue() {
-    var btn = event.target;
+async function exportQueue(evt) {
+    var btn = (evt && evt.target) || document.getElementById('exportQueueBtn');
+    if (!btn) { console.error('[排队] 导出按钮未找到'); return; }
     btn.innerHTML = '导出中...';
     btn.disabled = true;
     try {
-        const blob = await adminApi.exportQueueDetail(deptName);
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
+        var result = await adminApi.exportQueueDetail(deptName);
+        var blob = result instanceof Blob ? result : (result instanceof Response ? await result.blob() : new Blob([JSON.stringify(result)], { type: 'text/csv' }));
+        var url = window.URL.createObjectURL(blob);
+        var a = document.createElement('a');
         a.href = url;
         a.download = deptName + '_queue.csv';
         a.click();
         window.URL.revokeObjectURL(url);
-        alert(deptName + '排队列表导出成功 ✅');
+        alert(deptName + '排队列表导出成功');
     } catch (e) {
         console.error('[排队详情] 导出失败:', e.message);
         alert('导出失败: ' + e.message);

@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>智环引诊 - 紧急情况</title>
-    <link rel="stylesheet" href="../css/common.css">
-    <link rel="stylesheet" href="../css/emergency.css">
+    <link rel="stylesheet" href="/control-center/css/common.css">
+    <link rel="stylesheet" href="/control-center/css/emergency.css">
 </head>
 
 <body>
@@ -19,25 +19,25 @@
             </div>
             <ul class="nav-menu">
                 <li class="nav-item">
-                    <a href="index.html" class="nav-link">首页</a>
+                    <a href="/control-center/html/index.html" class="nav-link">首页</a>
                 </li>
                 <li class="nav-item">
-                    <a href="dispatch.html" class="nav-link">调度管理</a>
+                    <a href="/control-center/html/dispatch.html" class="nav-link">调度管理</a>
                 </li>
                 <li class="nav-item">
-                    <a href="bracelet.html" class="nav-link">手环管理</a>
+                    <a href="/control-center/html/bracelet.html" class="nav-link">手环管理</a>
                 </li>
                 <li class="nav-item">
-                    <a href="task-monitor.html" class="nav-link">任务监控</a>
+                    <a href="/control-center/html/task-monitor.html" class="nav-link">任务监控</a>
                 </li>
                 <li class="nav-item">
-                    <a href="emergency.html" class="nav-link active">紧急情况</a>
+                    <a href="/control-center/html/emergency.html" class="nav-link active">紧急情况</a>
                 </li>
                 <li class="nav-item">
-                    <a href="analytics.html" class="nav-link">数据分析</a>
+                    <a href="/control-center/html/analytics.html" class="nav-link">数据分析</a>
                 </li>
                 <li class="nav-item">
-                    <a href="settings.html" class="nav-link">系统设置</a>
+                    <a href="/control-center/html/settings.html" class="nav-link">系统设置</a>
                 </li>
             </ul>
         </aside>
@@ -82,80 +82,13 @@
                 <div class="card-header">
                     <h4 class="card-title">实时警报列表</h4>
                     <div style="display: flex; align-items: center; gap: 12px;">
-                        <span style="font-size: 12px; color: #666;">共 5 条警报</span>
+                        <span style="font-size: 12px; color: #666;" id="alarmCountLabel">共 0 条警报</span>
                         <button class="btn-sm" style="background: #5c7cfa; color: white;"
                             onclick="goToAlarmList()">更多</button>
                     </div>
                 </div>
-                <div class="alarm-list">
-                    <div class="alarm-item danger" id="alarm-1">
-                        <div class="alarm-info">
-                            <div class="alarm-content">
-                                <div class="alarm-time">14:35:28</div>
-                                <div class="alarm-location">2F-洗手间附近</div>
-                                <div class="alarm-desc">患者触发紧急求助按钮，需要立即响应</div>
-                            </div>
-                        </div>
-                        <div class="alarm-actions">
-                            <button class="alarm-btn primary" onclick="showPatientDetail('王大爷', 1)">查看详情</button>
-                            <button class="alarm-btn success" onclick="handleAlarmDirect(1)">立即处理</button>
-                        </div>
-                    </div>
-
-                    <div class="alarm-item danger" id="alarm-2">
-                        <div class="alarm-info">
-                            <div class="alarm-content">
-                                <div class="alarm-time">14:33:15</div>
-                                <div class="alarm-location">1F-电梯厅</div>
-                                <div class="alarm-desc">患者需要轮椅协助通行</div>
-                            </div>
-                        </div>
-                        <div class="alarm-actions">
-                            <button class="alarm-btn primary" onclick="showPatientDetail('李女士', 2)">查看详情</button>
-                            <button class="alarm-btn success" onclick="handleAlarmDirect(2)">立即处理</button>
-                        </div>
-                    </div>
-
-                    <div class="alarm-item">
-                        <div class="alarm-info">
-                            <div class="alarm-content">
-                                <div class="alarm-time">14:28:42</div>
-                                <div class="alarm-location">3F-检验科门口</div>
-                                <div class="alarm-desc">患者等待时间过长，建议分流</div>
-                            </div>
-                        </div>
-                        <div class="alarm-actions">
-                            <button class="alarm-btn secondary" onclick="ignoreAlert()">忽略</button>
-                            <button class="alarm-btn primary" onclick="triagePatient()">分流处理</button>
-                        </div>
-                    </div>
-
-                    <div class="alarm-item">
-                        <div class="alarm-info">
-                            <div class="alarm-content">
-                                <div class="alarm-time">14:25:10</div>
-                                <div class="alarm-location">医技楼B区</div>
-                                <div class="alarm-desc">设备维护提醒 - NFC终端#12需要校准</div>
-                            </div>
-                        </div>
-                        <div class="alarm-actions">
-                            <button class="alarm-btn secondary" onclick="postponeAlert()">延后</button>
-                            <button class="alarm-btn primary" onclick="assignMaintenance()">安排维护</button>
-                        </div>
-                    </div>
-
-                    <div class="alarm-item success">
-                        <div class="alarm-info">
-                            <div class="alarm-content">
-                                <div class="alarm-time">14:20:33</div>
-                                <div class="alarm-location">1F-门诊大厅</div>
-                                <div class="alarm-desc">患者已成功引导至心内科诊室</div>
-                            </div>
-                        </div>
-                        <div class="alarm-actions">
-                            <button class="alarm-btn secondary" onclick="closeAlert()">关闭</button>
-                        </div>
-                    </div>
+                <div class="alarm-list" id="alarmListContainer">
+                    <div style="text-align:center;padding:40px;color:#999;">加载中...</div>
                 </div>
             </div>
 
@@ -174,31 +107,8 @@
                                 <th style="padding: 10px; text-align: left; color: #666;">状态</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr style="border-bottom: 1px solid #f0f0f0;">
-                                <td style="padding: 10px;">14:20</td>
-                                <td style="padding: 10px;">门诊大厅</td>
-                                <td style="padding: 10px;">引导服务</td>
-                                <td style="padding: 10px; color: #4caf50;">已完成</td>
-                            </tr>
-                            <tr style="border-bottom: 1px solid #f0f0f0;">
-                                <td style="padding: 10px;">14:15</td>
-                                <td style="padding: 10px;">电梯厅</td>
-                                <td style="padding: 10px;">轮椅协助</td>
-                                <td style="padding: 10px; color: #4caf50;">已完成</td>
-                            </tr>
-                            <tr style="border-bottom: 1px solid #f0f0f0;">
-                                <td style="padding: 10px;">14:10</td>
-                                <td style="padding: 10px;">洗手间</td>
-                                <td style="padding: 10px;">紧急求助</td>
-                                <td style="padding: 10px; color: #4caf50;">已完成</td>
-                            </tr>
-                            <tr style="border-bottom: 1px solid #f0f0f0;">
-                                <td style="padding: 10px;">13:58</td>
-                                <td style="padding: 10px;">检验科</td>
-                                <td style="padding: 10px;">分流建议</td>
-                                <td style="padding: 10px; color: #4caf50;">已完成</td>
-                            </tr>
+                        <tbody id="historyTableBody">
+                            <tr><td colspan="4" style="padding:20px;text-align:center;color:#999;">加载中...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -255,7 +165,8 @@
 
     <script src="/js/api-config.js"></script>
     <script src="/js/mock-data.js"></script>
-    <script src="../js/emergency.js"></script>
+    <script src="/control-center/js/alarm-realtime.js"></script>
+    <script src="/control-center/js/emergency.js"></script>
 </body>
 
 </html>

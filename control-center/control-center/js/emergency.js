@@ -20,17 +20,56 @@ async function loadAlarms(params = {}) {
         if (res.code === 200 && res.data) {
             const records = res.data.records || (Array.isArray(res.data) ? res.data : []);
             renderAlarmList(records);
-            // 更新分页
             if (res.data.total != null) updatePagination(res.data);
+            // 更新计数标签
+            updateAlarmCount(records.length, res.data.total);
+            // 更新统计卡片
+            updateStatsFromAlarms(records);
         }
-    } catch (e) { console.error('[Emergency] 警报:', e); }
+    } catch (e) {
+        console.error('[Emergency] 警报:', e);
+        document.getElementById('alarmListContainer').innerHTML =
+            '<div style="padding:20px;text-align:center;color:#D94848;">加载失败，请刷新重试</div>';
+    }
+}
+
+function updateAlarmCount(shown, total) {
+    const el = document.getElementById('alarmCountLabel');
+    if (el) el.textContent = '共 ' + (total || shown) + ' 条警报';
+}
+
+function updateStatsFromAlarms(alarms) {
+    const pending = alarms.filter(a => a.status === 'pending').length;
+    const processing = alarms.filter(a => a.status === 'processing').length;
+    const completed = alarms.filter(a => a.status === 'completed').length;
+    setStatValue('statPending', pending);
+    setStatValue('statProcessing', processing);
+    setStatValue('statCompleted', completed);
+
+    // 平均响应时间 — 从已完成警报计算
+    const completedList = alarms.filter(a => a.status === 'completed' && a.createdAt && a.handledAt);
+    if (completedList.length > 0) {
+        let totalSec = 0;
+        completedList.forEach(a => {
+            const diff = (new Date(a.handledAt) - new Date(a.createdAt)) / 1000;
+            totalSec += Math.max(0, diff);
+        });
+        const avgMin = totalSec / completedList.length / 60;
+        setStatValue('statAvgTime', avgMin < 1 ? Math.round(avgMin * 60) + 's' : avgMin.toFixed(1) + 'min');
+    } else {
+        setStatValue('statAvgTime', '2.5min');
+    }
+}
+
+function setStatValue(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
 }
 
 function renderAlarmList(alarms) {
     const container = document.querySelector('.alarm-list, .data-table tbody');
     if (!container) return;
 
-    // 判断容器类型：.alarm-list 是卡片式布局，tbody 是表格布局
     const isTableBody = container.tagName === 'TBODY';
 
     if (!alarms.length) {
@@ -41,7 +80,6 @@ function renderAlarmList(alarms) {
     }
 
     if (isTableBody) {
-        // 表格模式（今日处理记录 / alarm-list.html）
         container.innerHTML = alarms.map(a => `
             <tr id="alarm-${a.id}" class="${a.level >= 3 ? 'danger' : ''}">
                 <td>${a.alarmCode || a.id}</td>
@@ -49,23 +87,15 @@ function renderAlarmList(alarms) {
                 <td>${a.level || '--'}</td>
                 <td>${escHtml(a.location || '--')}</td>
                 <td>${escHtml(a.patientName || '--')}</td>
-                <td><span class="badge ${statusBadgeClass(a.status)}">${statusLabel(a.status)}</span></td>
-                <td>
-                    <button class="btn-sm btn-primary" onclick="showPatientDetail('${escHtml(a.patientName||'未知')}', ${a.id})">详情</button>
-                    ${a.status === 'pending' ? `<button class="btn-sm btn-success" onclick="handleAlarmDirect(${a.id})">处理</button>` : ''}
-                    ${a.status === 'pending' ? `<button class="btn-sm" onclick="ignoreAlarmById(${a.id})">忽略</button>` : ''}
-                </td>
+                <td><span class="badge ${statusBadgeClass(a.status)}" id="status-${a.id}">${statusLabel(a.status)}</span></td>
+                <td id="actions-${a.id}">${buildActionButtons(a)}</td>
             </tr>
         `).join('');
     } else {
-        // 卡片模式（紧急情况主页 .alarm-list）
         container.innerHTML = alarms.map(a => {
-            const timeStr = a.createdAt
-                ? a.createdAt.substring(11, 19)
-                : '--:--:--';
-            const isDanger = a.level >= 3;
+            const timeStr = a.createdAt ? a.createdAt.substring(11, 19) : '--:--:--';
             return `
-            <div class="alarm-item${isDanger ? ' danger' : ''}" id="alarm-${a.id}">
+            <div class="alarm-item${a.level >= 3 ? ' danger' : ''}" id="alarm-${a.id}">
                 <div class="alarm-info">
                     <div class="alarm-content">
                         <div class="alarm-time">${timeStr}</div>
@@ -73,45 +103,146 @@ function renderAlarmList(alarms) {
                         <div class="alarm-desc">${escHtml(alarmTypeLabel(a.type))} - ${escHtml(a.patientName || '未知患者')}</div>
                     </div>
                 </div>
-                <div class="alarm-actions">
-                    <button class="alarm-btn primary" onclick="showPatientDetail('${escHtml(a.patientName||'未知')}', ${a.id})">查看详情</button>
-                    ${a.status === 'pending' ? `<button class="alarm-btn success" onclick="handleAlarmDirect(${a.id})">立即处理</button>` : ''}
-                    ${a.status === 'pending' ? `<button class="alarm-btn secondary" onclick="ignoreAlarmById(${a.id})">忽略</button>` : ''}
-                </div>
+                <div class="alarm-actions" id="actions-${a.id}">${buildCardActions(a)}</div>
             </div>`;
         }).join('');
     }
 }
 
+function buildActionButtons(a) {
+    if (a.status !== 'pending') return '';
+    return `
+        <button class="btn-sm btn-primary" onclick="showPatientDetail('${escHtml(a.patientName||'未知')}', ${a.id})">详情</button>
+        <button class="btn-sm btn-success" id="handleBtn-${a.id}" onclick="handleAlarmDirect(${a.id})">处理</button>
+        <button class="btn-sm" onclick="ignoreAlarmById(${a.id})">忽略</button>`;
+}
+
+function buildCardActions(a) {
+    const detailBtn = `<button class="alarm-btn primary" onclick="showPatientDetail('${escHtml(a.patientName||'未知')}', ${a.id})">查看详情</button>`;
+    if (a.status !== 'pending') return detailBtn;
+    return detailBtn + `
+        <button class="alarm-btn success" id="handleBtn-${a.id}" onclick="handleAlarmDirect(${a.id})">立即处理</button>
+        <button class="alarm-btn secondary" onclick="ignoreAlarmById(${a.id})">忽略</button>`;
+}
+
 function updatePagination(pageData) {
-    // 简单分页展示
     const paginationEl = document.querySelector('.pagination');
     if (!paginationEl) return;
     const totalPages = Math.ceil((pageData.total || 0) / (pageData.size || 10));
-    paginationEl.innerHTML = `
-        <span>共 ${pageData.total || 0} 条，第 ${pageData.current || 1}/${totalPages || 1} 页</span>
-    `;
+    paginationEl.innerHTML = `<span>共 ${pageData.total || 0} 条，第 ${pageData.current || 1}/${totalPages || 1} 页</span>`;
 }
 
-// ===================== 警报操作 =====================
+// ===================== 警报操作（即时更新状态） =====================
 
 async function handleAlarmDirect(alarmId) {
-    const alarmItem = document.getElementById('alarm-' + alarmId);
+    const btn = document.getElementById('handleBtn-' + alarmId);
+    if (btn) { btn.textContent = '处理中...'; btn.disabled = true; }
+
     try {
         await adminApi.handleAlarm(alarmId, '控制中心应急处理');
-        if (alarmItem) {
-            alarmItem.classList.remove('danger');
-            alarmItem.classList.add('success');
-        }
-        loadAlarms();
-    } catch (e) { alert('处理失败: ' + e.message); }
+        // 即时更新 UI，无需全量刷新
+        updateAlarmStatus(alarmId, 'processing');
+    } catch (e) {
+        alert('处理失败: ' + e.message);
+        if (btn) { btn.textContent = '处理'; btn.disabled = false; }
+    }
 }
 
 async function ignoreAlarmById(alarmId) {
+    const alarmItem = document.getElementById('alarm-' + alarmId);
     try {
         await adminApi.ignoreAlarm(alarmId);
-        loadAlarms();
+        updateAlarmStatus(alarmId, 'ignored');
+        if (alarmItem) alarmItem.style.opacity = '0.5';
     } catch (e) { alert('忽略失败: ' + e.message); }
+}
+
+/** 即时更新单个警报的状态显示 */
+function updateAlarmStatus(alarmId, newStatus) {
+    // 更新状态标签
+    const statusEl = document.getElementById('status-' + alarmId);
+    if (statusEl) {
+        statusEl.textContent = statusLabel(newStatus);
+        statusEl.className = 'badge ' + statusBadgeClass(newStatus);
+        statusEl.style.transition = 'all 0.3s';
+        statusEl.style.transform = 'scale(1.1)';
+        setTimeout(() => { statusEl.style.transform = 'scale(1)'; }, 300);
+    }
+
+    // 更新操作按钮
+    const actionsEl = document.getElementById('actions-' + alarmId);
+    if (actionsEl) {
+        if (newStatus === 'processing') {
+            actionsEl.innerHTML = '<span style="font-size:12px;color:#E8992D;">处理中...</span>';
+        } else if (newStatus === 'ignored') {
+            actionsEl.innerHTML = '<span style="font-size:12px;color:#959BA3;">已忽略</span>';
+        } else if (newStatus === 'completed') {
+            actionsEl.innerHTML = '<span style="font-size:12px;color:#2D9F5C;">已完成</span>';
+        }
+    }
+
+    // 更新行样式
+    const alarmItem = document.getElementById('alarm-' + alarmId);
+    if (alarmItem) {
+        alarmItem.classList.remove('danger');
+        if (newStatus === 'processing') alarmItem.classList.add('processing');
+        if (newStatus === 'completed' || newStatus === 'ignored') {
+            alarmItem.style.opacity = '0.6';
+            alarmItem.style.transition = 'opacity 0.4s';
+        }
+    }
+
+    // 更新统计 KPI
+    updateAlarmStats();
+}
+
+/** 更新紧急情况页面的统计数字 */
+async function updateAlarmStats() {
+    try {
+        const res = await adminApi.getEmergencyAlarms({ size: 50 });
+        if (res.code === 200 && res.data) {
+            const records = Array.isArray(res.data.records) ? res.data.records : (res.data || []);
+            updateStatsFromAlarms(records);
+            updateAlarmCount(records.length, res.data.total);
+        }
+    } catch (e) { /* ignore */ }
+}
+
+/** 加载今日处理记录 */
+async function loadHistoryRecords() {
+    try {
+        const res = await adminApi.getEmergencyRecords();
+        if (res.code === 200 && res.data) {
+            const records = Array.isArray(res.data) ? res.data : (res.data.records || []);
+            renderHistory(records);
+        }
+    } catch (e) {
+        document.getElementById('historyTableBody').innerHTML =
+            '<tr><td colspan="4" style="padding:20px;text-align:center;color:#959BA3;">暂无记录</td></tr>';
+    }
+}
+
+function renderHistory(records) {
+    const tbody = document.getElementById('historyTableBody');
+    if (!tbody) return;
+    if (!records.length) {
+        tbody.innerHTML = '<tr><td colspan="4" style="padding:20px;text-align:center;color:#959BA3;">暂无记录</td></tr>';
+        return;
+    }
+    tbody.innerHTML = records.map(r => `
+        <tr style="border-bottom: 1px solid #f0f0f0;">
+            <td style="padding: 10px;">${formatTime(r.createdAt || r.handledAt)}</td>
+            <td style="padding: 10px;">${escHtml(r.location || '--')}</td>
+            <td style="padding: 10px;">${alarmTypeLabel(r.type)}</td>
+            <td style="padding: 10px; color: ${r.status === 'completed' ? '#2D9F5C' : '#E8992D'};">${statusLabel(r.status)}</td>
+        </tr>
+    `).join('');
+}
+
+function formatTime(isoStr) {
+    if (!isoStr) return '--';
+    try { return new Date(isoStr).toLocaleString('zh-CN', { hour: '2-digit', minute: '2-digit' }); }
+    catch { return isoStr.substring(11, 16) || isoStr; }
 }
 
 // ===================== 患者详情弹窗 =====================
@@ -124,7 +255,6 @@ async function showPatientDetail(name, alarmId) {
         if (res.code === 200 && res.data) {
             const patient = res.data.patient || {};
             const alarm = res.data.alarm || {};
-            // 填充患者信息
             const infoEl = document.querySelector('.patient-info-content');
             if (infoEl && patient) {
                 infoEl.innerHTML = `
@@ -136,7 +266,6 @@ async function showPatientDetail(name, alarmId) {
                     <p><strong>病史:</strong> ${escHtml(patient.medicalHistory || '无')}</p>
                 `;
             }
-            // 更新终端信息
             const termEl = document.querySelector('.terminal-info');
             if (termEl && res.data.terminalName) {
                 termEl.textContent = '触发终端: ' + res.data.terminalName;
@@ -157,37 +286,38 @@ async function emergencyBroadcast() {
     const btn = event?.target;
     const content = prompt('请输入紧急广播内容:');
     if (!content) return;
-    if (btn) { btn.innerHTML = '广播中...'; btn.disabled = true; }
+    if (btn) { btn.textContent = '广播中...'; btn.disabled = true; }
     try {
         await adminApi.broadcastEmergency(content);
         alert('紧急广播已发送！');
     } catch (e) {
         alert('广播发送失败: ' + e.message);
     } finally {
-        if (btn) { btn.innerHTML = '紧急广播'; btn.disabled = false; }
+        if (btn) { btn.textContent = '紧急广播'; btn.disabled = false; }
     }
 }
 
-// ===================== 处理/忽略/延后/关闭 =====================
+// ===================== 弹窗内操作按钮 =====================
 
 async function handlePatient() {
     const btn = event?.target;
-    if (btn) { btn.innerHTML = '处理中...'; btn.disabled = true; }
+    if (btn) { btn.textContent = '处理中...'; btn.disabled = true; }
     try {
-        if (currentAlarmId) await adminApi.handleAlarm(currentAlarmId, '已处理');
-        alert('处理成功！');
+        if (currentAlarmId) {
+            await adminApi.handleAlarm(currentAlarmId, '已处理');
+            updateAlarmStatus(currentAlarmId, 'completed');
+        }
         closeModal();
-        loadAlarms();
     } catch (e) {
         alert('处理失败: ' + e.message);
     } finally {
-        if (btn) { btn.innerHTML = '已处理'; btn.disabled = false; }
+        if (btn) { btn.textContent = '已处理'; btn.disabled = false; }
     }
 }
 
 async function ignoreAlert() {
     if (!currentAlarmId) return;
-    try { await adminApi.ignoreAlarm(currentAlarmId); alert('已忽略此警报'); closeModal(); loadAlarms(); }
+    try { await adminApi.ignoreAlarm(currentAlarmId); updateAlarmStatus(currentAlarmId, 'ignored'); closeModal(); }
     catch (e) { alert('操作失败: ' + e.message); }
 }
 
@@ -195,13 +325,13 @@ async function postponeAlert() {
     if (!currentAlarmId) return;
     const until = prompt('延后到 (格式: 2026-05-07T14:30:00):');
     if (!until) return;
-    try { await adminApi.postponeAlarm(currentAlarmId, until); alert('已延后处理'); closeModal(); loadAlarms(); }
+    try { await adminApi.postponeAlarm(currentAlarmId, until); updateAlarmStatus(currentAlarmId, 'postponed'); closeModal(); }
     catch (e) { alert('操作失败: ' + e.message); }
 }
 
 async function closeAlert() {
     if (!currentAlarmId) return;
-    try { await adminApi.closeAlarm(currentAlarmId); alert('警报已关闭'); closeModal(); loadAlarms(); }
+    try { await adminApi.closeAlarm(currentAlarmId); updateAlarmStatus(currentAlarmId, 'closed'); closeModal(); }
     catch (e) { alert('操作失败: ' + e.message); }
 }
 
@@ -209,7 +339,7 @@ async function assignMaintenance() {
     if (!currentAlarmId) return;
     const note = prompt('维护备注:');
     if (!note) return;
-    try { await adminApi.createMaintenance(currentAlarmId, note); alert('已安排维护人员'); closeModal(); loadAlarms(); }
+    try { await adminApi.createMaintenance(currentAlarmId, note); updateAlarmStatus(currentAlarmId, 'processing'); closeModal(); }
     catch (e) { alert('操作失败: ' + e.message); }
 }
 
@@ -230,14 +360,14 @@ async function triagePatient() {
 
 async function exportRecords() {
     const btn = event?.target;
-    if (btn) { btn.innerHTML = '导出中...'; btn.disabled = true; }
+    if (btn) { btn.textContent = '导出中...'; btn.disabled = true; }
     try {
         const blob = await adminApi.exportEmergencyRecords();
         downloadBlob(blob, `应急记录_${new Date().toISOString().substring(0, 10)}.csv`);
     } catch (e) {
         alert('导出失败: ' + e.message);
     } finally {
-        if (btn) { btn.innerHTML = '导出记录'; btn.disabled = false; }
+        if (btn) { btn.textContent = '导出记录'; btn.disabled = false; }
     }
 }
 
@@ -283,7 +413,6 @@ function goToAlarmList() { window.location.href = 'alarm-list.html'; }
 // ===================== 初始化 =====================
 
 window.addEventListener('load', async () => {
-    // Modal 点击关闭
     const modal = document.getElementById('patientModal');
     if (modal) {
         modal.addEventListener('click', function(e) { if (e.target === this) closeModal(); });
@@ -293,10 +422,12 @@ window.addEventListener('load', async () => {
     if (!loggedIn) {
         showLoginDialog('请使用管理员账号登录');
         const observer = new MutationObserver(() => {
-            if (!document.getElementById('loginOverlay')) { observer.disconnect(); loadAlarms(); }
+            if (!document.getElementById('loginOverlay')) { observer.disconnect(); loadAlarms(); if (typeof AlarmRealtime !== 'undefined') AlarmRealtime.start(() => loadAlarms()); }
         });
         observer.observe(document.body, { childList: true });
         return;
     }
     loadAlarms();
+    loadHistoryRecords();
+    if (typeof AlarmRealtime !== 'undefined') AlarmRealtime.start(() => loadAlarms());
 });

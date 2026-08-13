@@ -12,8 +12,8 @@ setInterval(() => {
 
 // ===================== 分流执行 =====================
 
-async function executeTriage() {
-    const btn = document.getElementById('mainTriageBtn');
+async function executeTriage(event) {
+    const btn = event?.currentTarget || document.getElementById('mainTriageBtn') || document.getElementById('gridTriageBtn');
     if (!btn) return;
     btn.innerHTML = '执行中...';
     btn.disabled = true;
@@ -124,6 +124,46 @@ function renderSuggestions(suggestions) {
     `).join('');
 }
 
+async function loadTaskPreemption() {
+    try {
+        const res = await adminApi.getTaskPreemption();
+        if (res.code === 200) {
+            renderPreemptionLog(Array.isArray(res.data) ? res.data : []);
+        }
+    } catch (e) { console.error('[Dispatch] 抢占事件:', e); }
+}
+
+function renderPreemptionLog(events) {
+    const countEl = document.getElementById('preemptCount');
+    if (countEl) countEl.textContent = events.length;
+
+    const container = document.getElementById('preemptLogItems');
+    if (!container) return;
+    const top = events.slice(0, 8);
+    container.innerHTML = top.map(e => {
+        const time = (e.createdAt || '').substring(11, 16);
+        return `<div class="log-item">
+            <span class="log-time">${escHtml(time)}</span>
+            <span class="log-type ${preemptTypeClass(e.level)}">${preemptTypeLabel(e.type)}</span>
+            <span class="log-desc">${escHtml((e.patientName ? e.patientName + ' ' : '') + (e.description || e.location || ''))}</span>
+        </div>`;
+    }).join('') || '<div class="log-item"><span class="log-desc">暂无抢占事件</span></div>';
+}
+
+function preemptTypeLabel(type) {
+    if (type === 'fall') return '摔倒';
+    if (type === 'vital') return '体征异常';
+    if (type === 'emergency') return '紧急';
+    if (type === 'wheelchair') return '轮椅';
+    return type || '事件';
+}
+
+function preemptTypeClass(level) {
+    if (level >= 4) return 'high';
+    if (level >= 3) return 'warning';
+    return 'normal';
+}
+
 async function executeSuggestion(fromDeptId, toDeptId, count, reason) {
     try {
         const res = await adminApi.executeDispatch({ fromDeptId, toDeptId, patientCount: count, reason });
@@ -186,11 +226,20 @@ function downloadBlob(blob, filename) {
 function loadDispatchData() {
     loadDeptLoadTable();
     loadSuggestions();
+    loadTaskPreemption();
 }
 
 // ===================== 初始化 =====================
 
 window.addEventListener('load', async () => {
+    // 绑定按钮 → 真实接口（移除内联假动画）
+    const mainBtn = document.getElementById('mainTriageBtn');
+    const gridBtn = document.getElementById('gridTriageBtn');
+    const exportBtn = document.getElementById('exportBtn');
+    if (mainBtn) mainBtn.addEventListener('click', executeTriage);
+    if (gridBtn) gridBtn.addEventListener('click', executeTriage);
+    if (exportBtn) exportBtn.addEventListener('click', exportReport);
+
     const loggedIn = await initAuth();
     if (!loggedIn) {
         showLoginDialog('请使用管理员账号登录');

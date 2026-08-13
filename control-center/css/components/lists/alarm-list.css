@@ -45,6 +45,7 @@
 
 .alarm-content {
     flex: 1;
+    min-width: 0;
 }
 
 .alarm-time {
@@ -63,6 +64,9 @@
 .alarm-desc {
     font-size: 11px;
     color: #868e96;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .alarm-btn {

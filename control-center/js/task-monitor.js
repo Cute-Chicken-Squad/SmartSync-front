@@ -15,12 +15,31 @@ const statusMap = { executing: '执行中', inserted: '已插入', paused: '已�
 
 // ===================== 页面初始化 =====================
 
+// 读取 URL 参数（从手环页面跳转过来时携带）
+const urlParams = new URLSearchParams(window.location.search);
+const TARGET_PATIENT_ID = urlParams.get('patientId');
+const TARGET_PATIENT_NAME = urlParams.get('patientName');
+
 document.addEventListener('DOMContentLoaded', async function () {
     updateDateTime();
-    // ★ 从 API 加载数据
+    if (TARGET_PATIENT_NAME) {
+        // 更新标题显示目标患者
+        const h2 = document.querySelector('.header-left h2');
+        if (h2) h2.textContent = '任务序列监控 - ' + decodeURIComponent(TARGET_PATIENT_NAME);
+    }
     await Promise.all([loadTasksKpi(), loadTasksList(), loadEventLog()]);
+    renderTaskList();
+    renderEventLog();
     listenStorageEvents();
     setInterval(updateDateTime, 1000);
+
+    // 自动打开目标患者的任务详情
+    if (TARGET_PATIENT_ID) {
+        setTimeout(() => {
+            const patient = patientTasks.find(p => String(p.id) === String(TARGET_PATIENT_ID));
+            if (patient) showTaskDetail(patient);
+        }, 800);
+    }
 });
 
 // ===================== 数据加载 (API) =====================
@@ -47,24 +66,75 @@ async function loadTasksList(dept, status) {
         if (status) params.status = status;
         const res = await adminApi.getTasksList(params);
         if (res.code === 200 && res.data) {
-            patientTasks = (res.data.records || res.data || []).map(r => ({
-                id: r.taskId || r.id,
-                name: r.patientName || '',
-                maskedId: r.maskedId || '',
-                dept: r.dept || '',
-                station: r.station || '',
-                stationLocation: r.stationLocation || '',
-                sequence: r.steps || r.sequence || [],
-                currentTask: r.currentStep || r.currentTask || '',
-                currentStatus: r.status === 'pause' ? 'paused' : (r.status === 'inserted' ? 'inserted' : 'executing'),
-                lastUpdate: r.updatedAt || r.lastUpdate || '',
-                insertedTasks: r.insertedTasks || [],
-                changeLog: r.changeLog || [],
-            }));
-            console.log('[任务监控] 任务列表已加载:', patientTasks.length);
-            return;
+            const raw = res.data.records || res.data || [];
+            if (raw.length > 0) {
+                patientTasks = raw.map(r => ({
+                    id: r.taskId || r.id,
+                    name: r.patientName || '',
+                    maskedId: r.maskedId || '',
+                    dept: r.dept || '',
+                    station: r.station || '',
+                    stationLocation: r.stationLocation || '',
+                    sequence: r.steps || r.sequence || [],
+                    currentTask: r.currentStep || r.currentTask || '',
+                    currentStatus: r.status === 'pause' ? 'paused' : (r.status === 'inserted' ? 'inserted' : 'executing'),
+                    lastUpdate: r.updatedAt || r.lastUpdate || '',
+                    insertedTasks: r.insertedTasks || [],
+                    changeLog: r.changeLog || [],
+                }));
+                console.log('[任务监控] 任务列表已加载:', patientTasks.length);
+                renderTaskList();
+                return;
+            }
         }
     } catch (e) { console.warn('[任务监控] 任务列表加载失败:', e.message); }
+
+    // 降级：从手环管理的患者列表构造任务序列
+    console.log('[任务监控] 使用降级数据');
+    patientTasks = buildFallbackTasks();
+    renderTaskList();
+}
+
+/** 从已绑定手环患者生成任务序列（后端无数据时降级） */
+function buildFallbackTasks() {
+    // 从 localStorage 或页面传递的数据获取患者列表
+    const stored = localStorage.getItem('smartsync_patients');
+    const patients = stored ? JSON.parse(stored) : [
+        { id: 1, name: '王大爷', maskedId: 'PAT-7A3B-9C2D', dept: '心内科', braceletId: 'ABC123456789', deptCode: 'cardiology' },
+        { id: 2, name: '李女士', maskedId: 'PAT-2E8F-4D1A', dept: '内分泌科', braceletId: 'DEF234567890', deptCode: 'endocrinology' },
+        { id: 3, name: '张先生', maskedId: 'PAT-5B1C-7E3F', dept: '消化内科', braceletId: 'GHI345678901', deptCode: 'gastroenterology' },
+        { id: 4, name: '赵阿姨', maskedId: 'PAT-9D4A-2B8E', dept: '内科', braceletId: 'JKL456789012', deptCode: 'internal' },
+        { id: 5, name: '孙大爷', maskedId: 'PAT-1F7C-5A3D', dept: '外科', braceletId: 'MNO567890123', deptCode: 'surgery' },
+    ];
+
+    const deptTasks = {
+        internal:       [{name:'挂号登记'},{name:'候诊排队'},{name:'医生问诊'},{name:'缴费结算'},{name:'取药'}],
+        surgery:        [{name:'挂号登记'},{name:'候诊排队'},{name:'医生问诊'},{name:'术前检查'},{name:'缴费结算'}],
+        cardiology:     [{name:'挂号登记'},{name:'心电图检查'},{name:'医生问诊'},{name:'缴费结算'},{name:'取药'}],
+        endocrinology:  [{name:'挂号登记'},{name:'血糖检测'},{name:'医生问诊'},{name:'缴费结算'},{name:'取药'}],
+        gastroenterology:[{name:'挂号登记'},{name:'候诊排队'},{name:'医生问诊'},{name:'胃镜检查预约'},{name:'缴费结算'}],
+    };
+
+    return patients.map((p, i) => {
+        const tasks = deptTasks[p.deptCode] || deptTasks.internal;
+        const seq = tasks.map((t, j) => ({
+            name: t.name,
+            status: j === 0 ? 'completed' : j === 1 ? 'current' : 'pending',
+        }));
+        return {
+            id: p.id,
+            name: p.name,
+            maskedId: p.maskedId,
+            dept: p.dept,
+            station: 'A-08',
+            stationLocation: '1F-电梯厅',
+            sequence: seq,
+            currentTask: seq.find(s => s.status === 'current')?.name || seq[0]?.name || '',
+            currentStatus: 'executing',
+            lastUpdate: new Date().toISOString().replace('T', ' ').substring(0, 19),
+            insertedTasks: [],
+        };
+    });
 }
 
 async function loadEventLog() {
@@ -157,7 +227,7 @@ async function togglePauseTask() {
 
 function updateDateTime() {
     const now = new Date();
-    const timeStr = now.toISOString().replace('T', ' ').substring(0, 19);
+    const timeStr = formatLocalDateTime(now);
     const el = document.getElementById('dateInfo');
     if (el) el.textContent = timeStr;
 }
@@ -252,8 +322,10 @@ function renderTaskList() {
     if (filtered.length === 0) { container.innerHTML = '<div class="empty-state">暂无符合条件的数据</div>'; return; }
     filtered.forEach(patient => {
         const card = document.createElement('div');
-        card.className = 'task-item-card ' + patient.currentStatus;
+        const isTarget = TARGET_PATIENT_ID && String(patient.id) === String(TARGET_PATIENT_ID);
+        card.className = 'task-item-card ' + patient.currentStatus + (isTarget ? ' target-highlight' : '');
         card.onclick = () => showTaskDetail(patient);
+        if (isTarget) card.style.border = '2px solid #5c7cfa'; card.style.boxShadow = '0 0 12px rgba(92,124,250,0.3)';
         const seqHtml = patient.sequence.map((task, i) => {
             let cls = task.status === 'completed' ? 'completed' : task.status === 'current' ? 'current' : task.status === 'inserted' ? 'inserted' : '';
             return `<span class="seq-task ${cls}">${task.name}</span>${i < patient.sequence.length - 1 ? '<span class="seq-arrow">→</span>' : ''}`;
